@@ -7,6 +7,6 @@ final class NotFoundException extends ProviderException
 {
     public static function of(string $provider, string $what, ?string $message = null): self
     {
-        return new self(\sprintf('%s has no %s%s', $provider, $what, null !== $message ? ': '.$message : '.'), 404);
+        return new self(\sprintf('%s has no %s%s', $provider, $what, null !== $message ? ': '.$message : '.'), 404, null, $provider, '404');
     }
 }

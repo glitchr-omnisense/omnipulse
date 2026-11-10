@@ -1,8 +1,8 @@
 #!/bin/sh
 # Composes the harness (this core + every provider), installs it when it changed, then runs the
 # command: "test" for PHPUnit, "bare" for the script that uses omnipulse with no framework at all,
-# "live" for the checks that need no account, "phpstan" for PHPStan, "composer ...", "sh" or
-# "php" as they are.
+# "reviews" for the review platforms installed (recorded, or --live), "live" for the checks that
+# reach the providers, "phpstan" for PHPStan, "composer ...", "sh" or "php" as they are.
 set -e
 php /omnipulse/core/docker/harness/setup.php
 cd /harness
@@ -15,6 +15,7 @@ case "${1:-test}" in
     test) shift || true; exec vendor/bin/phpunit --exclude-group live "$@" ;;
     live) shift || true; exec vendor/bin/phpunit --group live "$@" ;;
     bare) shift || true; exec php /omnipulse/core/docker/harness/bin/bare "$@" ;;
+    reviews) shift || true; exec php /omnipulse/core/docker/harness/bin/reviews "$@" ;;
     phpstan)
         status=0
         for dir in /omnipulse/core /harness/packages/*; do
@@ -24,5 +25,5 @@ case "${1:-test}" in
         done
         exit $status ;;
     composer|sh|php) exec "$@" ;;
-    *) echo "test, live, bare, phpstan, composer, sh or php" >&2; exit 2 ;;
+    *) echo "test, live, bare, reviews, phpstan, composer, sh or php" >&2; exit 2 ;;
 esac

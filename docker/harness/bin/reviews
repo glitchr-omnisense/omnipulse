@@ -1,0 +1,101 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * The review platforms installed, in bare PHP: no bundle, no container, no
+ * Twig. The registry is built by hand from the review packages installed
+ * (omnipulse/google-reviews, omnipulse/tripadvisor, omnipulse/trustpilot),
+ * each says what it gives and on which terms, then each is asked a place's
+ * rating, its reviews and the link to write one - the platforms answering
+ * from their packages' recorded answers. With --live, each platform whose
+ * key and place are set in .env is asked for real.
+ *
+ *   docker compose run --rm omnipulse reviews           # exits 1 when a class of a framework was loaded
+ *   docker compose run --rm omnipulse reviews --live    # the platforms with keys in .env asked for real
+ *   docker compose run --rm omnipulse reviews --json    # the same, whole: every class and file loaded
+ *
+ * OMNIPULSE_AUTOLOAD names another autoloader than the harness's.
+ */
+
+use Omnipulse\Model\Place;
+use Omnipulse\RatingInterface;
+use Omnipulse\Registry;
+use Omnipulse\ReviewsInterface;
+use Omnipulse\WriteUrlInterface;
+
+require getenv('OMNIPULSE_AUTOLOAD') ?: '/harness/vendor/autoload.php';
+
+$live = in_array('--live', $argv, true);
+$platforms = require __DIR__.'/../config/review-platforms.php';
+$isLive = static fn (array $g): bool => $live && [] === array_filter($g['needs'], static fn (string $k) => false === getenv($k) || '' === getenv($k));
+$recorded = new Symfony\Component\HttpClient\MockHttpClient(require __DIR__.'/../config/recorded.php');
+$factories = [];
+foreach (require __DIR__.'/../plugins.php' as $slug => $plugin) {
+    if (isset($platforms[$slug]) && class_exists($class = $plugin['factory'])) {
+        $factories[] = new $class(isset($platforms[$slug]) && $isLive($platforms[$slug]) ? Symfony\Component\HttpClient\HttpClient::create() : $recorded);
+    }
+}
+$installed = array_map(static fn ($factory) => $factory->getName(), $factories);
+$config = $places = [];
+foreach ($platforms as $name => $provider) {
+    if (in_array($provider['factory'], $installed, true)) {
+        $real = $isLive($provider);
+        $config[$name] = ['factory' => $provider['factory'], 'options' => $real ? array_filter($provider['options'], static fn ($v) => null !== $v) : $provider['example']];
+        $places[$name] = new Place(...($real ? $provider['place'] : $provider['examplePlace']));
+    }
+}
+$registry = new Registry($factories, $config);
+
+$report = ['live' => $live, 'platforms' => [], 'runs' => []];
+foreach ($registry->all() as $name => $provider) {
+    $terms = $registry->terms($name);
+    // The platform's Terms (display, caching) over the Capabilities' terms (the addresses that apply).
+    $report['platforms'][$name] = ['title' => $provider->getTitle(), 'live' => $isLive($platforms[$name]), 'terms' => ['cacheFor' => $terms->cacheFor, 'maxReviews' => $terms->maxReviews, 'attribution' => $terms->attribution, 'noIndex' => $terms->noIndex]] + $provider->capabilities()->toArray();
+    $place = $places[$name];
+    $row = [];
+    if ($provider instanceof RatingInterface) {
+        $rating = $provider->rating($place);
+        $row['rating'] = [$rating->value, $rating->scale, $rating->count, $rating->url];
+    }
+    if ($provider instanceof ReviewsInterface) {
+        $reviews = $provider->reviews($place, 3);
+        $row['reviews'] = array_map(static fn ($r) => [$r->rating, $r->author, $r->publishedAt?->format('Y-m-d'), $r->url], $reviews);
+    }
+    if ($provider instanceof WriteUrlInterface) {
+        $row['writeUrl'] = $provider->writeUrl($place);
+    }
+    $report['runs'][$name] = $row;
+}
+
+// What PHP loaded to get there: the proof that no framework was needed.
+$report['symbols'] = [...get_declared_classes(), ...get_declared_interfaces(), ...get_declared_traits()];
+$report['files'] = get_included_files();
+$framework = array_values(preg_grep('~^(?:Symfony\\\\Component\\\\(?:DependencyInjection|Config|HttpKernel|HttpFoundation)|Symfony\\\\Bundle|Symfony\\\\Bridge|Doctrine|Twig)\\\\~', $report['symbols']));
+$symfony = array_values(array_unique(array_map(static fn (string $s) => implode('\\', array_slice(explode('\\', $s), 0, 3)), preg_grep('~^Symfony\\\\(?!Polyfill)~', $report['symbols']))));
+sort($symfony);
+
+if (in_array('--json', $argv, true)) {
+    echo json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), "\n";
+    exit($framework ? 1 : 0);
+}
+
+echo 'The review platforms in bare PHP: the registry built by hand, no bundle, no container, no Twig; ', $live ? 'the platforms set in .env for real, the others recorded' : 'the platforms\' recorded answers', ".\n\n";
+foreach ($report['platforms'] as $name => $g) {
+    $t = $g['terms'];
+    printf("  %-14s %s%s: gives %s; kept %s, %s reviews at most, credited to \"%s\"%s\n", $name, $g['title'], $g['live'] ? ' (live)' : '', implode(' ', $g['contracts']), null === $t['cacheFor'] ? 'as its policy says' : (0 === $t['cacheFor'] ? 'never' : $t['cacheFor'].' s'), $t['maxReviews'] ?? 'any', $t['attribution'], $t['noIndex'] ? ', pages not indexed' : '');
+}
+echo "\n";
+foreach ($report['runs'] as $name => $r) {
+    if (isset($r['rating'])) {
+        printf("  %-14s %s/%d from %d reviews, %s\n", $name, $r['rating'][0], $r['rating'][1], $r['rating'][2], $r['rating'][3] ?? 'no link');
+    }
+    foreach ($r['reviews'] ?? [] as [$stars, $author, $date, $url]) {
+        printf("  %-14s   %s by %s on %s, %s\n", '', $stars, $author ?? 'anonymous', $date ?? '?', $url ?? 'no link');
+    }
+    if (isset($r['writeUrl'])) {
+        printf("  %-14s   to write one: %s\n", '', $r['writeUrl']);
+    }
+}
+echo "\nLoaded from Symfony: ", implode(', ', $symfony) ?: 'nothing', "\n";
+echo 'Classes of a framework (DependencyInjection, Config, HttpKernel, HttpFoundation, a bundle or bridge, Doctrine, Twig): ', $framework ? implode(', ', $framework) : 'none', "\n";
+exit($framework ? 1 : 0);

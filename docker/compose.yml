@@ -1,10 +1,14 @@
 # omnisense/omnipulse with every omnipulse/* provider:
 #
-#   docker compose run --rm omnipulse test       # every package's tests (recorded answers, no network)
-#   docker compose run --rm omnipulse bare       # plain PHP: search and audience reports asked through a Registry - and what PHP loaded
-#   docker compose run --rm omnipulse live       # the checks that need no account (Matomo's public demo)
-#   docker compose run --rm omnipulse phpstan    # PHPStan, each package at the highest level
-#   docker compose down -v                        # the harness's volume gone
+#   cp .env.dist .env                              # the platforms' keys and places, when you have them
+#   docker compose run --rm omnipulse test         # every package's tests (recorded answers, no network)
+#   docker compose run --rm omnipulse bare         # plain PHP: audience reports, a rating and reviews, a funded profile
+#                                                  # asked through one Registry - and what PHP loaded
+#   docker compose run --rm omnipulse reviews      # the review platforms installed, on their recorded answers (--live: those set in .env)
+#   docker compose run --rm omnipulse live         # the checks that need no account (Matomo's demo, Open Collective,
+#                                                  # Liberapay), and GitHub Sponsors' when OMNIPULSE_GITHUB_TOKEN is set
+#   docker compose run --rm omnipulse phpstan      # PHPStan, each package at the highest level
+#   docker compose down -v                         # the harness's volume gone
 #
 # Providers come from GitHub (branch 1.x) unless their checkout sits under OMNIPULSE_PLUGINS (set it
 # to ../.. in .env when this core sits in the workspace beside them): then that checkout is what runs.
@@ -16,6 +20,8 @@ services:
     image: omnisense/omnipulse-harness
     # One service, no server beside it: Docker's default bridge, no network of its own to create.
     network_mode: bridge
+    environment:
+      OMNIPULSE_GITHUB_TOKEN: ${OMNIPULSE_GITHUB_TOKEN:-}
     env_file:
       - path: .env
         required: false

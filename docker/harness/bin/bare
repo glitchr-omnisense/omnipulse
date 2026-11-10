@@ -2,23 +2,40 @@
 <?php
 
 /*
- * Omnipulse in plain PHP: no bundle, no container, no framework. A
- * Registry with the fixed provider: a search report by query over a
- * period, an audience report by entry page with a filter, a metric it
- * cannot count refused; then a JSON API answered through a recorded HTTP
- * client - an answer read with types, a refused key turned into
- * omnipulse's exception. Prints what happened and every class and file
- * PHP loaded, as JSON.
+ * Omnipulse in plain PHP: no bundle, no container, no framework. One
+ * Registry for the three families, with the fixed providers: a search
+ * report by query over a period, an audience report by entry page with a
+ * filter; an establishment's rating, its reviews, the link to write one
+ * and the platform's terms, a platform down showing nothing; a funded
+ * account's profile (a weekly income turned monthly, a goal), its sponsors
+ * and tiers, a provider not installed refused. Then the HTTP helpers: a
+ * JSON API answered through a recorded HTTP client, an answer read with
+ * types, a refused key turned into omnipulse's exception. Prints what
+ * happened and every class and file PHP loaded, as JSON.
  */
 
+use Omnipulse\Exception\InvalidConfigException;
 use Omnipulse\Exception\InvalidKeyException;
+use Omnipulse\Exception\UnreachableException;
+use Omnipulse\Http\Json;
 use Omnipulse\Http\JsonApi;
 use Omnipulse\Model\Dimension;
+use Omnipulse\Model\Goal;
+use Omnipulse\Model\Income;
 use Omnipulse\Model\Metric;
+use Omnipulse\Model\Money;
+use Omnipulse\Model\Period;
+use Omnipulse\Model\Place;
+use Omnipulse\Model\Profile;
 use Omnipulse\Model\ReachQuery;
+use Omnipulse\Model\Review;
 use Omnipulse\Model\Row;
+use Omnipulse\Model\Sponsor;
+use Omnipulse\Model\Tier;
 use Omnipulse\Registry;
+use Omnipulse\Testing\ArrayFactory;
 use Omnipulse\Testing\FixedReachFactory;
+use Omnipulse\Testing\FixedReviewsFactory;
 use Omnipulse\Testing\RecordedHttpClient;
 
 require getenv('OMNIPULSE_AUTOLOAD') ?: '/harness/vendor/autoload.php';
@@ -33,8 +50,19 @@ $audience = [
     new Row(['entry_page' => '/ateliers', 'source' => 'google'], ['visitors' => 95, 'visits' => 110, 'pageviews' => 300]),
     new Row(['entry_page' => '/ateliers', 'source' => 'direct'], ['visitors' => 20, 'visits' => 25, 'pageviews' => 40]),
 ];
-$registry = new Registry([new FixedReachFactory($search, $audience)], ['site' => ['factory' => 'fixed', 'options' => ['site' => 'https://atelier.example.org/']]]);
+$registry = new Registry([new FixedReachFactory($search, $audience), new FixedReviewsFactory(), new ArrayFactory()], [
+    'site' => ['factory' => 'fixed', 'options' => ['site' => 'https://atelier.example.org/']],
+    'reviews' => ['factory' => 'fixed-reviews', 'options' => ['host' => 'reviews.example', 'cache_for' => 0]],
+    'funding' => ['factory' => 'array', 'options' => [
+        'profile' => new Profile('array', 'glitchr-studio', 'Glitch Art', url: 'https://example.org/glitchr-studio', sponsors: 3,
+            income: new Income(Money::fromDecimal('12.00', 'EUR'), Period::Week), goal: new Goal('A day a week', amount: Money::fromDecimal('100', 'EUR'), period: Period::Week)),
+        'sponsors' => [new Sponsor('ada', 'Ada'), new Sponsor('acme', 'ACME', kind: Sponsor::ORGANIZATION, tier: 'Sponsor'), new Sponsor('bob')],
+        'tiers' => [new Tier('Backer', Money::fromDecimal(5, 'EUR')), new Tier('Once', null, Period::Once, customAmount: true)],
+    ]],
+    'nowhere' => ['factory' => 'missing'],
+]);
 
+// Audience
 $report = $registry->search('site')->searchPerformance(new ReachQuery(new DateTimeImmutable('2026-10-01'), new DateTimeImmutable('2026-10-31'), [Dimension::Query]));
 $out['search'] = $report->toArray();
 $out['searchTotals'] = $report->totals();
@@ -42,6 +70,36 @@ $entries = $registry->audience('site')->audience(new ReachQuery(new DateTimeImmu
 $out['entries'] = array_map(static fn (Row $r) => [$r->dimension(Dimension::EntryPage), $r->metric(Metric::Visits)], $entries->rows);
 $out['lastDays'] = [($q = ReachQuery::lastDays(28, today: new DateTimeImmutable('2026-10-24')))->start->format('Y-m-d'), $q->end->format('Y-m-d')];
 
+// Reviews
+$place = new Place('p1', 'Atelier');
+$rating = $registry->rating('reviews')->rating($place);
+$out['rating'] = [$rating->value, $rating->scale, $rating->count, $rating->outOfFive(), $rating->url];
+$out['reviews'] = array_map(static fn (Review $r) => [$r->rating, $r->author, $r->publishedAt?->format('Y-m-d'), $r->url], $registry->reviews('reviews')->reviews($place, 3));
+$out['writeUrl'] = $registry->writeUrl('reviews')->writeUrl($place);
+$terms = $registry->terms('reviews');
+$out['terms'] = ['cacheFor' => $terms->cacheFor, 'maxReviews' => $terms->maxReviews, 'attribution' => $terms->attribution];
+try {
+    $registry->rating('reviews')->rating(new Place('down'));
+} catch (UnreachableException $e) {
+    $out['down'] = $e->getMessage();
+}
+
+// Funding
+$profile = $registry->profile('funding')->profile();
+$out['profile'] = $profile->toArray();
+$out['monthly'] = $profile->income?->monthly()?->decimal();
+$out['sponsors'] = array_map(static fn (Sponsor $s) => $s->label(), $registry->sponsors('funding')->sponsors(limit: 2));
+$out['tiers'] = array_map(static fn (Tier $t) => [$t->name, $t->price?->decimal(), $t->period->value], $registry->tiers('funding')->tiers());
+try {
+    $registry->get('nowhere');
+} catch (InvalidConfigException $e) {
+    $out['missing'] = $e->getMessage();
+}
+
+$out['contracts'] = array_map(static fn (string $name) => $registry->get($name)->capabilities()->contracts(), ['site' => 'site', 'reviews' => 'reviews', 'funding' => 'funding']);
+$out['families'] = array_map(static fn (string $name) => $registry->get($name)->capabilities()->families(), ['site' => 'site', 'reviews' => 'reviews', 'funding' => 'funding']);
+
+// The HTTP helpers
 $api = new JsonApi(RecordedHttpClient::routes([
     'POST /api/v2/query' => '{"results":[{"metrics":[120],"dimensions":["/ateliers"]}]}',
     'GET /private' => [401, '{"error":"Invalid API key"}'],
@@ -53,6 +111,8 @@ try {
 } catch (InvalidKeyException $e) {
     $out['refused'] = $e->getMessage();
 }
+$decoded = json_decode('{"data":{"account":{"stats":{"contributorsCount":"42"},"since":"2016-10-15T15:47:40.951Z"}}}', true);
+$out['read'] = [Json::int($decoded, 'data', 'account', 'stats', 'contributorsCount'), Json::date($decoded, 'data', 'account', 'since')?->format('Y-m-d'), Json::string($decoded, 'data', 'nothing')];
 
 echo json_encode($out + ['loaded' => [
     'symbols' => [...get_declared_classes(), ...get_declared_interfaces(), ...get_declared_traits()],

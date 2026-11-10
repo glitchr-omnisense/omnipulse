@@ -3,7 +3,9 @@
 /**
  * The harness's composer.json and phpunit.xml: this core from its checkout,
  * each provider from a checkout under /omnipulse/plugins when there is one,
- * from GitHub (branch 1.x) otherwise; every package's tests in one run.
+ * from GitHub (branch 1.x) otherwise; every package's tests in one run -
+ * Symfony's DependencyInjection, HttpKernel and cache and Twig installed
+ * beside them for the bridges' tests (the bare script proves none is needed).
  * /harness/packages/<slug> links to each provider's directory (for
  * PHPStan). Files are rewritten only when they change, so the entrypoint
  * knows when to install.
@@ -21,7 +23,8 @@ $packages = [];
 $dev = [];
 @mkdir("$out/packages", 0775, true);
 foreach ($plugins as $slug => $plugin) {
-    [$testsNs, $needs] = $plugin + [1 => []];
+    $testsNs = $plugin[0];
+    $needs = $plugin[1] ?? [];
     $dev += $needs;
     $name = "omnipulse/$slug";
     $dir = "$local/$slug";
@@ -55,7 +58,12 @@ $composer = [
     'require-dev' => [
         'phpstan/phpstan' => '^2.1',
         'phpunit/phpunit' => '^11.0',
+        'symfony/cache' => '^7.0|^8.0',
+        'symfony/config' => '^7.0|^8.0',
+        'symfony/dependency-injection' => '^7.0|^8.0',
         'symfony/http-client' => '^7.0|^8.0',
+        'symfony/http-kernel' => '^7.0|^8.0',
+        'twig/twig' => '^3.0',
     ] + $dev,
     'autoload-dev' => ['psr-4' => $tests],
     'minimum-stability' => 'dev',

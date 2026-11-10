@@ -6,16 +6,28 @@ order: 80
 # Writing a provider
 
 A provider is a package `omnipulse/<name>`, namespace `Omnipulse\<Name>\`, with a factory and a
-provider class. It requires `omnisense/omnipulse` and `symfony/http-client-contracts`, nothing else
-(`symfony/http-client` and PHPUnit in `require-dev`).
+provider class, serving one family. It requires `omnisense/omnipulse` and
+`symfony/http-client-contracts`, nothing else (`symfony/http-client` and PHPUnit in
+`require-dev`; a review platform's package requires `symfony/http-client`, for the client it makes
+when given none). The rules shared by the three families come first, then each family's.
 
 ## The rules
 
 - **The factory** extends `Omnipulse\ProviderFactory`: `populate()` sets its name
   (`omnipulse.factory_name`, kebab-case: `search-console`), its title, its required options and
   the defaults of the others; `build()` returns the provider. The HTTP client comes through the
-  factory's constructor, never created inside; with none, `build()` throws
-  `InvalidConfigException`.
+  factory's constructor; with none, an audience factory's `build()` throws
+  `InvalidConfigException`, a review platform's makes one (below).
+- **The provider** implements the contracts it can answer and describes itself in
+  `capabilities()`, true to the configuration: a contract that needs an access the options do not
+  hold is `false`, and its method throws `NotSupportedException::operation()`. The registry's
+  typed getters read it ([Concepts](concepts.md#typed-getters)).
+- **Secrets** are constructor arguments marked `#[\SensitiveParameter]`, and every call goes
+  through the core's HTTP helper of the family, which keeps them out of what it throws
+  ([Errors](errors.md#no-secret-in-a-failure)).
+
+## An audience provider
+
 - **The provider** implements `SearchPerformanceInterface` or `AudienceInterface` (or both) and
   describes itself in `capabilities()`: its dimensions and metrics, whether dimensions combine, its
   terms (URLs) and its limits (in words).
@@ -38,7 +50,7 @@ provider class. It requires `omnisense/omnipulse` and `symfony/http-client-contr
 - **The note**: `Report::$note` says what the figures are not (provisional, sampled, weekly,
   summed by day), when the provider knows it.
 
-## A skeleton
+### A skeleton
 
 ```php
 <?php
@@ -163,14 +175,90 @@ echo json_encode($http->requests[0]['options']['query']), "\n";
 
 The second row has no `bounce_rate`: the answer gave none.
 
+## A review platform
+
+- **The provider** implements the review contracts it gives - `RatingInterface`,
+  `ReviewsInterface`, `ReplyInterface`, `InviteInterface`, `WriteUrlInterface` - which all extend
+  `TermsInterface`; `capabilities()` sets `rating`, `reviews`, `reply`, `invite`, `writeUrl`.
+- **`terms()`** is read in the platform's documentation, with its address (`source`): how long
+  what it gives may be kept (`cacheFor`: `0`, or `null` when the platform's policy is not public),
+  the reviews per call (`maxReviews`), the attribution, `authors`, `link`, `noIndex`, the other
+  rules in words ([Models](models.md#terms)).
+- **Calls** go through `Omnipulse\Http\Answer::send()`: a transport error, a 5xx or a 429 become
+  `UnreachableException`; the provider reads the rest - a 401 or 403 is
+  `InvalidKeyException::from('<platform>', ...)`, another error `ProviderException::from(...)`,
+  the platform's own code as `providerCode`.
+- **The factory** takes `?HttpClientInterface $http = null` (named `$http`: the Symfony bundle
+  gives the application's `http_client` to an argument of that name) and makes one with
+  `HttpClient::create()` when it is `null`.
+- **The models** keep what showing a review requires: its author as the platform names them, its
+  date, its link (`Review::$url`, the establishment's page when the platform gives none); a
+  `Rating` its `url` and, when the platform draws its score, its `image`.
+
+```php
+final class GuestbookProvider implements RatingInterface, ReviewsInterface, WriteUrlInterface
+{
+    public function capabilities(): Capabilities
+    {
+        return new Capabilities(rating: true, reviews: true, writeUrl: true);
+    }
+
+    public function terms(): Terms
+    {
+        return new Terms(cacheFor: 3600, maxReviews: 20, attribution: 'Guestbook', source: 'https://guestbook.example/terms');
+    }
+
+    /** @return array<mixed> */
+    private function call(string $path, array $query = []): array
+    {
+        $answer = Answer::send($this->http, 'guestbook', 'GET', $this->baseUrl.$path, ['query' => $query, 'headers' => ['Authorization' => 'Bearer '.$this->token]]);
+        if (\in_array($answer->status, [401, 403], true)) {
+            throw InvalidKeyException::from('guestbook', \sprintf('The token was refused (HTTP %d).', $answer->status), (string) $answer->status);
+        }
+        if ($answer->status >= 400) {
+            throw ProviderException::from('guestbook', \sprintf('HTTP %d.', $answer->status), (string) $answer->status);
+        }
+
+        return $answer->json();
+    }
+
+    // getName(), getTitle(), rating(), reviews(), writeUrl() as the contracts say
+}
+```
+
+(a sketch, not run; omnipulse/tripadvisor is the shortest provider to read whole.) The existing
+providers: `GoogleReviewsProvider` (two APIs behind one provider, an OAuth refresh token kept until
+a minute before it lapses, `Place::$owner` selecting the owner's side), `TripadvisorProvider` (a
+key in the query, one details call kept for the rating and the write link), `TrustpilotProvider`
+(three hosts, a client-credentials token, a business user's header, a `find()` of its own).
+
+## A funding platform
+
+- **The provider** implements the funding contracts it can answer - `ProfileInterface`,
+  `SponsorsInterface`, `TiersInterface` - and says so in `capabilities()`, with whether a key is
+  needed (`key`) and the terms that apply. A platform that keeps its sponsors private (Liberapay)
+  implements the profile only; the registry then refuses `sponsors()` with a
+  `NotSupportedException`. Each method reads the configured account, or the `$account` given.
+- **Calls** go through `Omnipulse\Http\Json::request()`, which turns a network failure into an
+  `UnreachableException` and an error status into a `ProviderException`; a GraphQL `errors`
+  member is a `ProviderException` too (`ProviderException::answered('<Title>', '<what>',
+  '<the error>')`). `Json`'s typed readers walk an answer without trusting its shape.
+- **Amounts** are `Model\Money` in hundredths of the currency, with the `Model\Period` the platform
+  counts in (Liberapay: the week; GitHub: the month; Open Collective's budget: the year).
+- **The factory** takes a `HttpClientInterface $http`, not nullable: in Symfony the bundle then
+  needs the application's `http_client` ([Symfony](symfony.md#the-http-client)).
+- **Sponsors** are listed page after page when no limit is given, and no more pages than needed
+  with one.
+
 ## Its tests
 
 - **The provider's own test** (`Tests/<Name>ProviderTest.php`), on recorded answers - from the
-  tool when a public account or demo exists (Matomo's are), else composed in the shape the tool's
-  reference documents, and said so in the test's docblock: the request sent (URL, body, key), the
-  mapping into rows in the family's units, the refusals (`NotSupportedException` for each
-  dimension, filter or combination it cannot answer), a refused key (`InvalidKeyException`), the
-  factory through a `Registry`.
+  platform when a public account or demo exists (Matomo's, Open Collective's, Liberapay's are),
+  else composed in the shape the platform's reference documents, and said so in the test's
+  docblock: the request sent (URL, body, key), the mapping into the family's models and units,
+  the refusals (`NotSupportedException` for each dimension, filter, combination or access it
+  cannot answer), a refused key (`InvalidKeyException`), an unknown place or account, the factory
+  through a `Registry`. Fixtures go in `Tests/Fixtures/`.
 - **`Tests/BareTest.php`**: every class of the package loaded alone, nothing foreign:
 
 ```php
@@ -184,9 +272,21 @@ self::assertSame([], $report['foreign']);
 self::assertSame([], LoadCheck::outside($report['files'], \dirname(__DIR__), ['/vendor/omnisense/omnipulse/', '/omnipulse/core/', '/vendor/symfony/http-client-contracts/', '/vendor/symfony/service-contracts/']));
 ```
 
-- **`Tests/LiveTest.php`** (`#[Group('live')]`), only for what needs no account, never in the
-  default run: `docker compose run --rm omnipulse live`.
+- **`Tests/LiveTest.php`** (`#[Group('live')]`), only for what needs no account (or a token from
+  the environment, skipped without it), never in the default run: `docker compose run --rm
+  omnipulse live`.
 
-The provider joins the harness with a line in `docker/harness/plugins.php` (its slug and its tests'
-namespace), and its README states what was verified and what was not, and the tool's terms
+## Registering it
+
+- Plain PHP: give the registry an instance of its factory.
+- Symfony: a service implementing `ProviderFactoryInterface` is autoconfigured with the tag
+  `omnipulse.provider_factory`; with the application's autowiring, the class in `src/` is enough.
+  The bundle registers on its own only the eleven factories it knows
+  (`OmnipulseBundle::factories()`).
+- The harness: a line in `docker/harness/plugins.php` (its slug, its tests' namespace, its
+  factory); a review platform also a block in `docker/harness/config/review-platforms.php` (its
+  environment variables, example options and place) and its fixtures in
+  `docker/harness/config/recorded.php`.
+
+Its README states what was verified and what was not, and the platform's terms
 ("Responsibility").

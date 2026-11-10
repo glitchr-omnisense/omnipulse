@@ -1,0 +1,29 @@
+{#- Omnipulse's reviews widget: a platform's rating and reviews, always with their origin, date and link.
+    Override @Omnipulse/reviews.html.twig to dress it; keep what the platform's Terms require
+    (terms.attribution, the authors, the links). No JSON-LD: reviews of a third party are not
+    the site's to mark up as its own AggregateRating. -#}
+<section class="omnipulse-reviews omnipulse-reviews--{{ provider.name }}"{% if terms.noIndex %} data-nosnippet{% endif %}>
+    <header class="omnipulse-reviews__origin">
+        {%- if rating %}
+            {% if rating.image %}<img class="omnipulse-reviews__score-image" src="{{ rating.image }}" alt="{{ rating.value }} / {{ rating.scale }}">{% endif %}
+            <strong class="omnipulse-reviews__score">{{ rating.value|number_format(1) }}</strong><span class="omnipulse-reviews__scale">/{{ rating.scale }}</span>
+            <span class="omnipulse-reviews__count">{{ rating.count }}</span>
+        {%- endif %}
+        {% if rating and rating.url %}<a class="omnipulse-reviews__platform" href="{{ rating.url }}" rel="noopener" target="_blank">{{ terms.attribution }}</a>{% else %}<span class="omnipulse-reviews__platform">{{ terms.attribution }}</span>{% endif %}
+    </header>
+    {% for review in reviews %}
+        <article class="omnipulse-reviews__review">
+            <p class="omnipulse-reviews__author">
+                {% if review.authorPhoto %}<img src="{{ review.authorPhoto }}" alt="" width="32" height="32">{% endif %}
+                {% if review.authorUrl %}<a href="{{ review.authorUrl }}" rel="noopener nofollow" target="_blank">{{ review.author }}</a>{% else %}{{ review.author }}{% endif %}
+                {% if review.publishedAt %}<time datetime="{{ review.publishedAt|date('c') }}">{{ review.publishedAt|date('d/m/Y') }}</time>{% endif %}
+                {% if review.image %}<img src="{{ review.image }}" alt="{{ review.rating }} / {{ review.scale }}">{% else %}<span class="omnipulse-reviews__stars">{{ review.rating }}/{{ review.scale }}</span>{% endif %}
+            </p>
+            {% if review.title %}<p class="omnipulse-reviews__title">{{ review.title }}</p>{% endif %}
+            {% if review.text %}<blockquote class="omnipulse-reviews__text">“{{ review.text }}”</blockquote>{% endif %}
+            {% if review.reply %}<p class="omnipulse-reviews__reply">{{ review.reply.text }}</p>{% endif %}
+            {% if review.url %}<a class="omnipulse-reviews__link" href="{{ review.url }}" rel="noopener" target="_blank">{{ terms.attribution }}</a>{% endif %}
+        </article>
+    {% endfor %}
+    {% if write_url %}<a class="omnipulse-reviews__write" href="{{ write_url }}" rel="noopener" target="_blank">{{ provider.title }}</a>{% endif %}
+</section>

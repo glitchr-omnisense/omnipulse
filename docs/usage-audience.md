@@ -35,7 +35,7 @@ foreach ($rows as $row) {
 ```
 
 Rows come in the order the tool gives them; sort them when the order matters, as above (Matomo's
-demo answered entry pages in an order that is not by visits: [Installation](installation.md#a-providers-api)).
+demo answered entry pages in an order that is not by visits: [Installation](installation.md#an-audience-providers-api)).
 
 ## A history
 

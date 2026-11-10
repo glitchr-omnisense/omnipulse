@@ -72,4 +72,24 @@ final class Config extends \ArrayObject
 
         return \is_bool($value) ? $value : \is_scalar($value) && \in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes', 'on'], true);
     }
+
+    /**
+     * A list given as one environment variable arrives as a single
+     * comma-separated string: split here, at run time.
+     *
+     * @return list<string>
+     */
+    public function list(string $key): array
+    {
+        $list = [];
+        foreach ((array) $this->get($key, []) as $value) {
+            foreach (explode(',', \is_scalar($value) ? (string) $value : '') as $one) {
+                if ('' !== trim($one)) {
+                    $list[] = trim($one);
+                }
+            }
+        }
+
+        return $list;
+    }
 }

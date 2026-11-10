@@ -17,7 +17,8 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * not reached (UnreachableException), the key refused (401, 403:
  * InvalidKeyException), nothing there (404: NotFoundException), any other
  * error or an answer that is not JSON (ProviderException) - with the
- * provider's own message when it gives one.
+ * provider's own message when it gives one. The audience's providers call
+ * through it.
  *
  * An UnreachableException's message names the method and the path, and the
  * HTTP client's reason without the address it quotes: never the query, where

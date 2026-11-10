@@ -10,8 +10,10 @@ use PHPUnit\Framework\TestCase;
 /**
  * omnisense/omnipulse with no framework: in PHP processes of their own
  * (this one has loaded PHPUnit), the harness's bare script asks search
- * and audience reports through a Registry and calls a recorded JSON API - and every
- * class of the package is loaded. Nothing may come from outside the
+ * and audience reports, a rating, reviews and the terms of a review
+ * platform, a funded account's profile, sponsors and tiers through one
+ * Registry, and calls a recorded JSON API - and every class of the package
+ * but its framework bridges (Bridge/) is loaded. Nothing may come from outside the
  * package but what it requires: Symfony's HTTP client contracts
  * (interfaces only) - no framework, no HTTP client, no application, even
  * in the harness where they are installed beside it.
@@ -20,7 +22,7 @@ final class BareTest extends TestCase
 {
     private const ALLOWED = ['/vendor/symfony/http-client-contracts/', '/vendor/symfony/service-contracts/'];
 
-    public function testReportsAskedByHandLoadNothingButOmnipulseAndWhatItRequires(): void
+    public function testEveryFamilyAskedByHandLoadsNothingButOmnipulseAndWhatItRequires(): void
     {
         $autoload = self::autoload();
         $process = proc_open([\PHP_BINARY, __DIR__.'/../docker/harness/bin/bare'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, ['OMNIPULSE_AUTOLOAD' => $autoload] + getenv());
@@ -39,6 +41,24 @@ final class BareTest extends TestCase
         self::assertSame(['/ateliers', 120], $report->raw('api'));
         self::assertSame('Example refused the credentials (401) for it: Invalid API key', $report->string('refused'));
 
+        self::assertSame([8.6, 10, 42, 4.3, 'https://reviews.example/p1'], $report->raw('rating'));
+        self::assertSame([[5, 'Camille R.', '2026-09-30', 'https://reviews.example/r/1']], $report->raw('reviews'), 'every review dated and linked');
+        self::assertSame('https://reviews.example/write/p1', $report->string('writeUrl'));
+        self::assertSame(['cacheFor' => 0, 'maxReviews' => 5, 'attribution' => 'Fixed Reviews'], $report->raw('terms'));
+        self::assertSame('[fixed-reviews] No answer.', $report->string('down'));
+
+        self::assertSame('Glitch Art', $report->string('profile.name'));
+        self::assertSame(['amount' => ['cents' => 1200, 'currency' => 'EUR', 'decimal' => '12.00'], 'period' => 'week'], $report->raw('profile.income'));
+        self::assertSame('52.00', $report->string('monthly'), '12 a week, 52 weeks a year: 52 a month');
+        self::assertSame('100.00', $report->string('profile.goal.amount.decimal'));
+        self::assertSame(['Ada', 'ACME'], $report->raw('sponsors'));
+        self::assertSame([['Backer', '5.00', 'month'], ['Once', null, 'once']], $report->raw('tiers'));
+        self::assertSame('No "missing" factory for the "nowhere" provider; installed: fixed, fixed-reviews, array.', $report->string('missing'));
+        self::assertSame([42, '2016-10-15', null], $report->raw('read'));
+
+        self::assertSame(['site' => ['searchPerformance', 'audience'], 'reviews' => ['rating', 'reviews', 'writeUrl'], 'funding' => ['profile', 'sponsors', 'tiers']], $report->raw('contracts'));
+        self::assertSame(['site' => ['audience'], 'reviews' => ['reviews'], 'funding' => ['funding']], $report->raw('families'));
+
         $symbols = array_values(array_filter((array) $report->raw('loaded.symbols'), 'is_string'));
         self::assertContains('Omnipulse\Registry', $symbols);
         self::assertSame([], LoadCheck::foreign($symbols), 'no class of a framework, an HTTP client or an application');
@@ -53,6 +73,9 @@ final class BareTest extends TestCase
 
         self::assertGreaterThan(20, \count($report['loaded']));
         self::assertContains('Omnipulse\Testing\FixedReach', $report['loaded']);
+        self::assertContains('Omnipulse\Testing\FixedReviews', $report['loaded']);
+        self::assertContains('Omnipulse\Http\Json', $report['loaded']);
+        self::assertSame([], preg_grep('~^Omnipulse\\\\Bridge\\\\~', $report['loaded']), 'the bridges are not loaded: they need what the package only suggests');
         self::assertSame([], $report['foreign']);
         self::assertSame([], LoadCheck::outside($report['files'], \dirname(__DIR__), self::ALLOWED));
     }
