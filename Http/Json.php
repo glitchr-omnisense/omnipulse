@@ -4,7 +4,7 @@ namespace Omnipulse\Http;
 
 use Omnipulse\Exception\ProviderException;
 use Omnipulse\Exception\UnreachableException;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
+use Omnisense\Contracts\Policy\Backoff;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -13,6 +13,10 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * that walk an answer they do not control: the funding platforms' (GraphQL
  * and JSON). The audience's providers call through JsonApi, the review
  * platforms' through Answer.
+ *
+ * The call is the family's JsonClient's (omnisense/contracts'): given the
+ * provider's Backoff, a 429 and its Retry-After, or a RateLimit field with
+ * nothing left, hold the provider's next calls (UsageLimitReachedException).
  */
 final class Json
 {
@@ -21,18 +25,15 @@ final class Json
      *
      * @return array<mixed> the decoded answer
      */
-    public static function request(HttpClientInterface $http, string $method, string $url, array $options, string $provider, string $what): array
+    public static function request(HttpClientInterface $http, string $method, string $url, array $options, string $provider, string $what, ?Backoff $backoff = null): array
     {
         try {
-            $response = $http->request($method, $url, $options);
-            $status = $response->getStatusCode();
-            $body = $response->getContent(false);
-        } catch (ExceptionInterface $e) {
+            $answer = (new JsonClient($http, $provider, [], $backoff))->exchange($method, $url, $options);
+        } catch (UnreachableException $e) {
             // The client's message and exception with the request's secrets masked, no trace keeping the options.
-            $secrets = Redaction::secrets($url, $options);
-
-            throw Redaction::withoutArguments(new UnreachableException(\sprintf('%s could not be reached for %s: %s', $provider, $what, Redaction::text($e->getMessage(), $secrets)), 0, Redaction::copy($e, $secrets)));
+            throw Redaction::withoutArguments(new UnreachableException(\sprintf('%s could not be reached for %s: %s', $provider, $what, (string) $e->getPrevious()?->getMessage()), 0, $e->getPrevious()));
         }
+        [$status, $body] = [$answer->status, $answer->body];
         if ($status >= 300) {
             throw Redaction::withoutArguments(ProviderException::answered($provider, $what, $status));
         }

@@ -7,16 +7,23 @@ order: 40
 
 ## The registry's configuration
 
-`new Registry($factories, $config)` takes the providers by name, each with its factory and options:
+`new Registry($factories, $config, $limiter = null)` takes the providers by name, each with its
+factory and options:
 
 ```php
 [
     '<provider name>' => [
         'factory' => '<factory name>',     // required: a factory's getName()
         'options' => [/* ... */],          // optional, default []: handed to the factory's create()
+        'policy' => [/* ... */],           // optional: the site's tightening of the provider's usage policy
+        'usage' => ['commercial' => true], // optional: what the site is (commercial, open_source, contract)
     ],
 ]
 ```
+
+`policy` and `usage` may sit in `options` too; a looser `policy` is refused
+([Usage policies](policies.md)). `$limiter` is where every provider's calls are counted: an
+in-memory one by default, a shared one for an application served by many processes.
 
 The provider name is the application's (`google`, `bing`, `stats`); the factory name is the
 package's. Options are checked when the provider is first asked for, not when the registry is

@@ -16,7 +16,13 @@ Every exception Omnipulse throws implements `Omnipulse\Exception\OmnipulseExcept
 | `ProviderException` | `\RuntimeException` | the platform answered, and not with what was asked: an error status, a body that is not JSON, an error inside a 200 (Matomo), a GraphQL `errors` member, no such account or listing, a place it does not know, a write link it does not give, no token from Google |
 | `InvalidKeyException` | `ProviderException` | the platform refused the credentials: 401 or 403, Matomo's "access"/"token" error, a refresh token or client credentials refused, Google's Places without an `api_key` |
 | `NotFoundException` | `ProviderException` | nothing under that identifier: 404 (a site or property that does not exist, or not this account's), from `JsonApi` |
-| `UnreachableException` | `\RuntimeException` | the platform could not be reached: a network error, a timeout; for a review platform also an HTTP status of 500 or more, or 429 (it said nothing about the request) |
+| `UnreachableException` | `\RuntimeException` | the platform could not be reached: a network error, a timeout; for a review platform also an HTTP status of 500 or more, or a 429 from a provider built without its factory (it said nothing about the request) |
+| `UsageLimitReachedException` | omnisense/contracts' `UsageLimitReached` (`\RuntimeException`, code 429) | a call refused before it was made: a rate limit of the provider's usage policy (as the site tightened it) is reached, or the platform asked to wait (a 429 and its `Retry-After`, a `RateLimit` field with nothing left) - `retryAfter` in seconds, `limit`, `provider`. See [usage policies](policies.md) |
+
+`OmnipulseException` extends omnisense/contracts' `ExceptionInterface`: one catch holds every omni
+family's. A site's `policy` looser than the provider's is omnisense/contracts'
+`InvalidPolicyException`, a `usage` the terms forbid its `UsageNotPermitted`, both when the
+provider is first asked through a typed getter.
 
 Two changes from the former families: `UnreachableException` is **not** a `ProviderException`
 any more (omnireview's was) - nothing was answered, so code that caught `ProviderException` to

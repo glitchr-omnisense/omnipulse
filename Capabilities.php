@@ -6,6 +6,10 @@ use Omnipulse\Exception\NotSupportedException;
 use Omnipulse\Model\Dimension;
 use Omnipulse\Model\Metric;
 use Omnipulse\Model\ReachQuery;
+use Omnisense\Contracts\Policy\Provenance;
+use Omnisense\Contracts\Policy\Requirements;
+use Omnisense\Contracts\Policy\UsagePolicy;
+use Omnisense\Contracts\Provider\CapabilitiesInterface;
 
 /**
  * What a provider is, said before it is asked anything: which contracts it
@@ -15,10 +19,16 @@ use Omnipulse\Model\ReachQuery;
  * terms and limits whoever runs it must keep.
  *
  * A review platform's rules of display and caching are its Terms
- * (TermsInterface::terms()); $terms here are the addresses of the terms
- * that apply, for every provider.
+ * (TermsInterface::terms()); its usage policy says them too, as rights
+ * (Terms::rights()).
+ *
+ * The policy is omnisense/contracts' UsagePolicy (policy()). The three
+ * fields written before it ($key, $terms, $limits) stay, read from the
+ * policy when it is given and they are not: a provider that gives them
+ * alone gets a policy made of them, its limits unknown (the words of
+ * $limits in its notes).
  */
-final readonly class Capabilities
+final readonly class Capabilities implements CapabilitiesInterface
 {
     /** The contracts, by family. */
     public const FAMILIES = [
@@ -26,6 +36,29 @@ final readonly class Capabilities
         'reviews' => ['rating', 'reviews', 'reply', 'invite', 'writeUrl'],
         'funding' => ['profile', 'sponsors', 'tiers'],
     ];
+
+    /**
+     * Whether a key or token is needed to read it; null: not said.
+     *
+     * @deprecated since 1.x, read policy()->requirements->key
+     */
+    public ?bool $key;
+
+    /**
+     * @var list<string> the terms whoever runs it must follow (URLs)
+     *
+     * @deprecated since 1.x, read policy()->provenance (terms, policy)
+     */
+    public array $terms;
+
+    /**
+     * @var list<string> the rate limits, quotas and freshness the provider states, in words
+     *
+     * @deprecated since 1.x, read policy()->rateLimits
+     */
+    public array $limits;
+
+    private UsagePolicy $policy;
 
     /**
      * @param bool            $searchPerformance it reports search queries, pages and positions (SearchPerformanceInterface)
@@ -44,6 +77,7 @@ final readonly class Capabilities
      * @param bool|null       $key               whether a key or token is needed to read it; null: not said
      * @param list<string>    $terms             the terms whoever runs it must follow (URLs)
      * @param list<string>    $limits            the rate limits, quotas and freshness the provider states, in words
+     * @param ?UsagePolicy    $policy            its usage policy; made of $key, $terms and $limits when null
      */
     public function __construct(
         public bool $searchPerformance = false,
@@ -59,10 +93,21 @@ final readonly class Capabilities
         public bool $profile = false,
         public bool $sponsors = false,
         public bool $tiers = false,
-        public ?bool $key = null,
-        public array $terms = [],
-        public array $limits = [],
+        ?bool $key = null,
+        array $terms = [],
+        array $limits = [],
+        ?UsagePolicy $policy = null,
     ) {
+        $this->policy = $policy ?? self::described($key, $terms, $limits);
+        $this->key = $key ?? $policy?->requirements->key;
+        $this->terms = [] !== $terms || null === $policy ? $terms : array_values(array_unique(array_filter([$policy->provenance->terms, $policy->provenance->policy])));
+        $this->limits = [] !== $limits || null === $policy ? $limits : array_map(static fn ($limit) => $limit->describe().(null !== $limit->note ? ' ('.$limit->note.')' : ''), $policy->rateLimits ?? []);
+    }
+
+    /** Its usage policy as the provider declares it: rate limits, rights, requirements, provenance. */
+    public function policy(): UsagePolicy
+    {
+        return $this->policy;
     }
 
     /** @return list<string> what it can be asked, by contract: searchPerformance, audience, rating, reviews, reply, invite, writeUrl, profile, sponsors, tiers */
@@ -138,6 +183,22 @@ final readonly class Capabilities
             'key' => $this->key,
             'terms' => $this->terms,
             'limits' => $this->limits,
+            'policy' => $this->policy->toArray(),
         ];
+    }
+
+    /**
+     * The policy of a provider that declares none: its limits unknown, a key
+     * required unless it says none is (the stricter reading of "not said"),
+     * its terms and limits in words kept in the provenance.
+     *
+     * @param list<string> $terms
+     * @param list<string> $limits
+     */
+    private static function described(?bool $key, array $terms, array $limits): UsagePolicy
+    {
+        $notes = array_filter([[] === $terms ? null : 'Terms: '.implode(', ', $terms), [] === $limits ? null : 'Limits: '.implode('; ', $limits)]);
+
+        return new UsagePolicy(UsagePolicy::UNNAMED, null, requirements: new Requirements(key: false !== $key), provenance: new Provenance(terms: $terms[0] ?? null, notes: [] === $notes ? null : implode(' ', $notes)));
     }
 }

@@ -276,6 +276,23 @@ self::assertSame([], LoadCheck::outside($report['files'], \dirname(__DIR__), ['/
   the environment, skipped without it), never in the default run: `docker compose run --rm
   omnipulse live`.
 
+## Its usage policy
+
+- **`policy.json`** beside the provider, in omnisense/contracts' schema
+  (`resources/usage-policy.schema.json`): the platform's rate limits as its terms state them
+  (`null` when they publish none: never a figure made up), its rights, its requirements, and the
+  terms' address with `provenance.verifiedAt`, the day they were read. A limit the schema cannot
+  say exactly is written in its stricter form, the real rule in the note.
+- `composer.json`: `"extra": {"omnisense": {"policy": "policy.json"}}` and
+  `omnisense/contracts` in `require`.
+- The provider `implements Omnisense\Contracts\Policy\DeclaresUsagePolicyInterface`
+  (`usagePolicy()`, read from the file once) and gives it to its Capabilities (`policy:`); its
+  factory hands `$c->backoff()` to its HTTP calls (`JsonApi`'s third argument, `Answer::send()`'s
+  and `Json::request()`'s last), so that a 429 and its `Retry-After` hold every next call.
+- A review platform's `terms()` and its policy's rights agree (`Terms::rights()`).
+- **`Tests/PolicyTest.php`**: the policy as declared, a site's limit counted with the call over it
+  never made, a 429 and its `Retry-After`, a tightening accepted, a looser one refused.
+
 ## Registering it
 
 - Plain PHP: give the registry an instance of its factory.

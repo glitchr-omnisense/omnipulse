@@ -112,6 +112,7 @@ makes and how it maps the platform's answer.
   [reviews](usage-reviews.md), [funding](usage-funding.md).
 - [Configuration reference](configuration.md): the registry's configuration and every provider's
   options.
+- [Usage policies](policies.md): each provider's declared policy, the guard, a site's tightening.
 - [Errors](errors.md): every exception, its message, what to catch where.
 - [Testing](testing.md): the fixed providers, the recorded HTTP client, the load check.
 - [The Docker harness](harness.md): the core and every provider installed, its commands.

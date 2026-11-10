@@ -115,6 +115,7 @@ does name the framework.
 | Variable | |
 |---|---|
 | `OMNIPULSE_PLUGINS` | where the providers' checkouts are (`../..` in the workspace); unset, they come from GitHub |
+| `OMNISENSE_CONTRACTS` | where omnisense/contracts' checkout is (`../../../omnisense-contracts` in the workspace), its tests run with the family's and PHPStan on it too; unset, it comes from GitHub |
 | `OMNIPULSE_GITHUB_TOKEN` | a GitHub token for omnipulse/github-sponsors' live test (passed into the container by `compose.yml`); unset, that test is skipped |
 | `GOOGLE_PLACES_KEY`, `GOOGLE_PLACE_ID` | the Places API key and a place: `google-reviews` is configured with both |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `GOOGLE_LOCATION` | the owner's side: the OAuth client, the refresh token, `accounts/<a>/locations/<l>` |

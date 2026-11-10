@@ -151,6 +151,15 @@ docker compose run --rm omnipulse phpstan    # PHPStan at the highest level, eac
   review platforms (each needs an account and a key). Their tests answer in the shapes their
   references document; each provider's README says which.
 
+## Usage policies
+
+Each provider declares its usage policy as data (`policy.json`, omnisense/contracts' schema): rate
+limits, rights (commercial use, caching, storage, attribution), requirements, and when its terms
+were read. The registry's typed getters give each provider behind its guard: a call over a limit
+is never made, a 429 and its `Retry-After` hold the provider's next calls
+(`UsageLimitReachedException`); a site tightens a policy (`policy`), never loosens it, and says what
+it is (`usage`). See [docs/policies.md](docs/policies.md).
+
 ## Responsibility
 
 omnisense/omnipulse and its omnipulse/* providers are unofficial clients, affiliated with none of

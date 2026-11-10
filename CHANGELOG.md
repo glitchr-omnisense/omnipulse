@@ -2,6 +2,40 @@
 
 ## Unreleased (1.x)
 
+### Added
+- omnisense/omnipulse on omnisense/contracts, the kernel every omni family builds on, with usage
+  policies. `Config`, `ProviderInterface`, `ProviderFactoryInterface`, `ProviderFactory`
+  (`populate()` and `build()` as before), `Registry`, `Http\Redaction`, `Testing\RecordedHttpClient`
+  (its `routes()` by method and path end, as before; a route may give headers) and
+  `RecordedResponse` keep their names and their API, each a thin subclass of the kernel's (prefix
+  `omnipulse`, omnipulse's exceptions); `OmnipulseException` extends the kernel's
+  `ExceptionInterface`.
+- `Http\JsonClient`, the kernel's JsonClient under omnipulse's name (401/403 an
+  `InvalidKeyException`, 404 a `NotFoundException`): the three helpers make their calls through
+  it - `JsonApi` (a third constructor argument, the provider's `Backoff`), `Answer::send()` and
+  `Json::request()` (a last argument, the same) - each keeping its errors and messages; given the
+  Backoff, a 429 and its `Retry-After`, or a `RateLimit` field with nothing left, hold the
+  provider's next calls. `Support\Data`, `Answer` and `Json`'s readers stay omnipulse's (their API
+  is not the kernel's `Data`'s), and so does `Testing\LoadCheck`, which now allows
+  omnisense/contracts' files.
+- `Capabilities::policy()`: the provider's `UsagePolicy`, given (`policy:`) or made of `$key`,
+  `$terms` and `$limits`, which stay, deprecated, read from the policy when it is given;
+  `toArray()` has `policy`. `Model\Terms::rights()`: a review platform's caching and attribution
+  as the policy's rights.
+- The typed getters give the provider behind its guard (`Policy\GuardedSearchPerformance`,
+  `GuardedAudience`, `GuardedRating`, `GuardedReviews`, `GuardedReply`, `GuardedInvite`,
+  `GuardedWriteUrl`, `GuardedProfile`, `GuardedSponsors`, `GuardedTiers`; each call an operation
+  named after its method; `inner()`): `Exception\UsageLimitReachedException`. A site's `policy`
+  (never looser) and `usage` per entry or in its options; `Registry::policy()`, `policies()`,
+  `guard()`, `names()` by contract; a shared `RateLimiterInterface` as the registry's third
+  argument. `get()`, `all()`, `create()` and `terms()` stay unguarded.
+- The harness mounts omnisense/contracts' checkout (`OMNISENSE_CONTRACTS`) and runs its tests, and
+  names its entrypoint (the image may be another family's harness tagged).
+
+### Changed
+- A typed getter no longer gives the provider object itself but its guarded wrapper (same
+  contract, same answers): code comparing it with `get()` compares `inner()`.
+
 ### Changed
 - `omnisense/omnireach` is now `omnisense/omnipulse` (2026-11-10: the family is renamed before
   omnireview and omnifund merge into it): the namespace `Omnipulse\` (`OmnireachException` is

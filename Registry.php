@@ -5,17 +5,37 @@ namespace Omnipulse;
 use Omnipulse\Exception\InvalidConfigException;
 use Omnipulse\Exception\NotSupportedException;
 use Omnipulse\Model\Terms;
+use Omnipulse\Policy\Guarded;
+use Omnipulse\Policy\GuardedAudience;
+use Omnipulse\Policy\GuardedInvite;
+use Omnipulse\Policy\GuardedProfile;
+use Omnipulse\Policy\GuardedRating;
+use Omnipulse\Policy\GuardedReply;
+use Omnipulse\Policy\GuardedReviews;
+use Omnipulse\Policy\GuardedSearchPerformance;
+use Omnipulse\Policy\GuardedSponsors;
+use Omnipulse\Policy\GuardedTiers;
+use Omnipulse\Policy\GuardedWriteUrl;
+use Omnisense\Contracts\Policy\PolicyGuard;
+use Omnisense\Contracts\Policy\RateLimiterInterface;
+use Omnisense\Contracts\Provider\ProviderInterface as BaseProvider;
+use Omnisense\Contracts\Provider\Registry as BaseRegistry;
 
 /**
  * The application's providers by name, each built once from its factory
- * and options - whichever family it serves:
+ * and options - whichever family it serves - each call through a contract
+ * guarded by the provider's usage policy:
  *
  *   $registry = new Registry([new SearchConsoleFactory($http), new MatomoFactory($http), new GoogleReviewsFactory($http), new LiberapayFactory($http)], [
  *       'google' => ['factory' => 'search-console', 'options' => ['site' => 'sc-domain:example.org', 'credentials' => '...']],
  *       'stats' => ['factory' => 'matomo', 'options' => ['url' => 'https://stats.example.org', 'site' => '1', 'token' => '...']],
- *       'reviews' => ['factory' => 'google-reviews', 'options' => ['api_key' => '...']],
+ *       'reviews' => [
+ *           'factory' => 'google-reviews',
+ *           'options' => ['api_key' => '...'],
+ *           'policy' => ['rateLimits' => [['max' => 200, 'window' => 'day', 'operations' => ['rating', 'reviews']]]],
+ *       ],
  *       'liberapay' => ['factory' => 'liberapay', 'options' => ['account' => 'Liberapay']],
- *   ]);
+ *   ], $limiter);
  *
  *   $registry->search('google')->searchPerformance(ReachQuery::lastDays(28, [Dimension::Query]));
  *   $registry->audience('stats')->audience(ReachQuery::lastDays(28, [Dimension::EntryPage]));
@@ -25,79 +45,90 @@ use Omnipulse\Model\Terms;
  * A typed getter gives the provider when it implements the contract and
  * its capabilities() say it gives it as configured (Trustpilot replies
  * only with a business user): otherwise a NotSupportedException.
+ *
+ * The typed getters give the provider behind its guard (Policy\Guarded*,
+ * inner() the provider itself): each call is checked against the policy's
+ * rate limits for its operation - the contract's method name,
+ * "searchPerformance", "audience", "rating", "reviews", "reply", "invite",
+ * "writeUrl", "profile", "sponsors", "tiers" - then counted, and refused
+ * with Exception\UsageLimitReachedException once a limit is reached or
+ * while the provider asks to wait (a 429 and its Retry-After). get(),
+ * all(), create() and terms() give the provider itself, unguarded.
+ * "policy" tightens the provider's policy, never loosens it; "usage" says
+ * what the site is (omnisense/contracts' Registry): policy(), policies(),
+ * guard().
  */
-final class Registry
+final class Registry extends BaseRegistry
 {
-    /** @var array<string, ProviderFactoryInterface> */
-    private array $factories = [];
+    /** @var string */
+    public const PREFIX = Config::PREFIX;
 
-    /** @var array<string, ProviderInterface> */
-    private array $providers = [];
+    /** @var array<string, Guarded<ProviderInterface>> the guarded contracts, by "contract name" */
+    private array $guarded = [];
+
+    private readonly ?RateLimiterInterface $shared;
 
     /**
-     * @param iterable<ProviderFactoryInterface>                                     $factories
-     * @param array<string, array{factory: string, options?: array<string, mixed>}> $config
+     * @param iterable<ProviderFactoryInterface>                                                                                         $factories
+     * @param array<string, array{factory: string, options?: array<string, mixed>, policy?: array<string, mixed>, usage?: array<string, mixed>}> $config
+     * @param ?RateLimiterInterface                                                                                                      $limiter   where every provider's calls are counted: an in-memory one by default, a shared one for an application served by many processes
      */
-    public function __construct(iterable $factories, private readonly array $config)
+    public function __construct(iterable $factories, array $config, ?RateLimiterInterface $limiter = null)
     {
-        foreach ($factories as $factory) {
-            $this->factories[$factory->getName()] = $factory;
-        }
+        parent::__construct($factories, $config, $limiter);
+        $this->shared = $limiter;
     }
 
     public function get(string $name): ProviderInterface
     {
-        return $this->providers[$name] ??= $this->factory($name)->create($this->config[$name]['options'] ?? []);
-    }
+        $provider = parent::get($name);
 
-    public function has(string $name): bool
-    {
-        return isset($this->config[$name]);
+        return $provider instanceof ProviderInterface ? $provider : throw new InvalidConfigException(\sprintf('The "%s" provider (%s) is no omnipulse provider.', $name, $provider::class));
     }
 
     /** The provider, as a search engine's report. */
     public function search(string $name): SearchPerformanceInterface
     {
-        return $this->typed($name, SearchPerformanceInterface::class, 'searchPerformance', 'report search performance');
+        return $this->guarded($name, SearchPerformanceInterface::class, 'searchPerformance', 'report search performance', static fn (SearchPerformanceInterface $p, PolicyGuard $g) => new GuardedSearchPerformance($p, $g));
     }
 
     /** The provider, as an analytics report. */
     public function audience(string $name): AudienceInterface
     {
-        return $this->typed($name, AudienceInterface::class, 'audience', 'report the audience');
+        return $this->guarded($name, AudienceInterface::class, 'audience', 'report the audience', static fn (AudienceInterface $p, PolicyGuard $g) => new GuardedAudience($p, $g));
     }
 
     /** The provider, as what gives an establishment's rating. */
     public function rating(string $name): RatingInterface
     {
-        return $this->typed($name, RatingInterface::class, 'rating', 'give its rating');
+        return $this->guarded($name, RatingInterface::class, 'rating', 'give its rating', static fn (RatingInterface $p, PolicyGuard $g) => new GuardedRating($p, $g));
     }
 
     /** The provider, as what gives an establishment's reviews. */
     public function reviews(string $name): ReviewsInterface
     {
-        return $this->typed($name, ReviewsInterface::class, 'reviews', 'give its reviews');
+        return $this->guarded($name, ReviewsInterface::class, 'reviews', 'give its reviews', static fn (ReviewsInterface $p, PolicyGuard $g) => new GuardedReviews($p, $g));
     }
 
     /** The provider, as what replies to a review. */
     public function replies(string $name): ReplyInterface
     {
-        return $this->typed($name, ReplyInterface::class, 'reply', 'give replying to a review');
+        return $this->guarded($name, ReplyInterface::class, 'reply', 'give replying to a review', static fn (ReplyInterface $p, PolicyGuard $g) => new GuardedReply($p, $g));
     }
 
     /** The provider, as what invites a customer to review. */
     public function invitations(string $name): InviteInterface
     {
-        return $this->typed($name, InviteInterface::class, 'invite', 'give inviting a customer to review');
+        return $this->guarded($name, InviteInterface::class, 'invite', 'give inviting a customer to review', static fn (InviteInterface $p, PolicyGuard $g) => new GuardedInvite($p, $g));
     }
 
     /** The provider, as what gives the address to leave a review. */
     public function writeUrl(string $name): WriteUrlInterface
     {
-        return $this->typed($name, WriteUrlInterface::class, 'writeUrl', 'give the address to leave a review');
+        return $this->guarded($name, WriteUrlInterface::class, 'writeUrl', 'give the address to leave a review', static fn (WriteUrlInterface $p, PolicyGuard $g) => new GuardedWriteUrl($p, $g));
     }
 
-    /** How what a review platform gives may be shown and kept. */
+    /** How what a review platform gives may be shown and kept (its policy's rights say it too: Terms::rights()). */
     public function terms(string $name): Terms
     {
         $provider = $this->get($name);
@@ -108,25 +139,19 @@ final class Registry
     /** The provider, as a funded account's profile. */
     public function profile(string $name): ProfileInterface
     {
-        return $this->typed($name, ProfileInterface::class, 'profile', 'show a profile');
+        return $this->guarded($name, ProfileInterface::class, 'profile', 'show a profile', static fn (ProfileInterface $p, PolicyGuard $g) => new GuardedProfile($p, $g));
     }
 
     /** The provider, as the account's public sponsors. */
     public function sponsors(string $name): SponsorsInterface
     {
-        return $this->typed($name, SponsorsInterface::class, 'sponsors', 'list sponsors');
+        return $this->guarded($name, SponsorsInterface::class, 'sponsors', 'list sponsors', static fn (SponsorsInterface $p, PolicyGuard $g) => new GuardedSponsors($p, $g));
     }
 
     /** The provider, as the tiers the account offers. */
     public function tiers(string $name): TiersInterface
     {
-        return $this->typed($name, TiersInterface::class, 'tiers', 'list tiers');
-    }
-
-    /** @return array<string, mixed> the options a provider is configured with */
-    public function options(string $name): array
-    {
-        return $this->config[$name]['options'] ?? [];
+        return $this->guarded($name, TiersInterface::class, 'tiers', 'list tiers', static fn (TiersInterface $p, PolicyGuard $g) => new GuardedTiers($p, $g));
     }
 
     /**
@@ -138,50 +163,67 @@ final class Registry
      */
     public function create(string $name, array $overrides = []): ProviderInterface
     {
-        return $this->factory($name)->create(array_replace($this->config[$name]['options'] ?? [], $overrides));
+        $provider = $this->factory($name)->create(array_replace($this->config[$name]['options'] ?? [], $overrides) + [self::PREFIX.'.name' => $name] + (null !== $this->shared ? [self::PREFIX.'.limiter' => $this->shared] : []));
+
+        return $provider instanceof ProviderInterface ? $provider : throw new InvalidConfigException(\sprintf('The "%s" provider (%s) is no omnipulse provider.', $name, $provider::class));
     }
 
-    /** @return list<string> the configured providers' names */
-    public function names(): array
+    /**
+     * The configured providers' names, in the configuration's order; those
+     * keeping a contract ("audience", "rating", "sponsors"...) when one is
+     * named.
+     *
+     * @return list<string>
+     */
+    public function names(?string $contract = null): array
     {
-        return array_keys($this->config);
+        return parent::names($contract);
     }
 
     /** @return array<string, ProviderInterface> every configured provider, built */
     public function all(): array
     {
         $all = [];
-        foreach (array_keys($this->config) as $name) {
+        foreach ($this->names() as $name) {
             $all[$name] = $this->get($name);
         }
 
         return $all;
     }
 
-    /** @return list<string> the factories installed: what `factory:` may name */
-    public function factories(): array
+    protected function invalid(string $message): \Throwable
     {
-        return array_keys($this->factories);
+        return new InvalidConfigException($message);
+    }
+
+    protected function notSupported(BaseProvider $provider, string $name, string $capability): \Throwable
+    {
+        return $provider instanceof ProviderInterface ? NotSupportedException::question($provider, $name, $capability) : NotSupportedException::capability($provider, $name, $capability);
     }
 
     /**
+     * The provider behind its guard, when it implements the contract and its
+     * capabilities() say it gives it as configured.
+     *
      * @template T of ProviderInterface
      *
-     * @param class-string<T> $contract
+     * @param class-string<T>                  $contract
+     * @param \Closure(T, PolicyGuard): Guarded<T> $wrap
      *
      * @return T
      */
-    private function typed(string $name, string $contract, string $capability, string $question): ProviderInterface
+    private function guarded(string $name, string $contract, string $capability, string $question, \Closure $wrap): ProviderInterface
     {
-        $provider = $this->get($name);
+        $key = $capability.' '.$name;
+        if (!isset($this->guarded[$key])) {
+            $provider = $this->get($name);
+            if (!$provider instanceof $contract || !$provider->capabilities()->gives($capability)) {
+                throw NotSupportedException::question($provider, $name, $question);
+            }
+            $this->guarded[$key] = $wrap($provider, $this->guard($name));
+        }
+        $guarded = $this->guarded[$key];
 
-        return $provider instanceof $contract && $provider->capabilities()->gives($capability) ? $provider : throw NotSupportedException::question($provider, $name, $question);
-    }
-
-    private function factory(string $name): ProviderFactoryInterface
-    {
-        $provider = $this->config[$name] ?? throw new InvalidConfigException(\sprintf('No "%s" provider; configured: %s.', $name, implode(', ', array_keys($this->config)) ?: 'none'));
-
-        return $this->factories[$provider['factory']] ?? throw new InvalidConfigException(\sprintf('No "%s" factory for the "%s" provider; installed: %s.', $provider['factory'], $name, implode(', ', array_keys($this->factories)) ?: 'none'));
+        return $guarded instanceof $contract ? $guarded : throw new \LogicException('A guarded contract of another kind.');
     }
 }

@@ -4,7 +4,7 @@ namespace Omnipulse\Http;
 
 use Omnipulse\Exception\ProviderException;
 use Omnipulse\Exception\UnreachableException;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
+use Omnisense\Contracts\Policy\Backoff;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -17,6 +17,11 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * parameters masked (Redaction::text(), api_key=***), its exception wrapped
  * as a copy (Redaction::copy()), no trace keeping the arguments where the
  * options stood.
+ *
+ * The call is the family's JsonClient's (omnisense/contracts'): given the
+ * provider's Backoff, a 429 and its Retry-After, or a RateLimit field with
+ * nothing left, hold the provider's next calls (UsageLimitReachedException)
+ * - without one, a 429 is unreachable as before.
  */
 final readonly class Answer
 {
@@ -30,18 +35,14 @@ final readonly class Answer
     }
 
     /** @param array<string, mixed> $options the HTTP client's options: body, json, query, headers, timeout */
-    public static function send(HttpClientInterface $http, string $provider, string $method, string $url, array $options = []): self
+    public static function send(HttpClientInterface $http, string $provider, string $method, string $url, array $options = [], ?Backoff $backoff = null): self
     {
         try {
-            $response = $http->request($method, $url, $options + ['timeout' => 10]);
-            $status = $response->getStatusCode();
-            $headers = $response->getHeaders(false);
-            $body = $response->getContent(false);
-        } catch (ExceptionInterface $e) {
-            $secrets = Redaction::secrets($url, $options);
-
-            throw Redaction::withoutArguments(UnreachableException::from($provider, 'No answer: '.Redaction::text($e->getMessage(), $secrets), null, Redaction::copy($e, $secrets)));
+            $answer = (new JsonClient($http, $provider, [], $backoff))->exchange($method, $url, $options + ['timeout' => 10]);
+        } catch (UnreachableException $e) {
+            throw Redaction::withoutArguments(UnreachableException::from($provider, 'No answer: '.$e->getPrevious()?->getMessage(), null, $e->getPrevious()));
         }
+        [$status, $headers, $body] = [$answer->status, $answer->headers, $answer->body];
         if ($status >= 500 || 429 === $status) {
             throw Redaction::withoutArguments(UnreachableException::from($provider, \sprintf('HTTP %d: %s', $status, mb_substr(trim($body), 0, 200)), (string) $status));
         }

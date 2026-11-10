@@ -10,9 +10,9 @@ namespace Omnipulse;
  * asked - SearchPerformanceInterface, AudienceInterface; RatingInterface,
  * ReviewsInterface, ReplyInterface, InviteInterface, WriteUrlInterface;
  * ProfileInterface, SponsorsInterface, TiersInterface - and whose terms
- * apply.
+ * apply: its usage policy (Capabilities::policy()).
  */
-interface ProviderInterface
+interface ProviderInterface extends \Omnisense\Contracts\Provider\ProviderInterface
 {
     /** The factory's name: "search-console", "matomo", "google-reviews", "trustpilot", "liberapay"... */
     public function getName(): string;

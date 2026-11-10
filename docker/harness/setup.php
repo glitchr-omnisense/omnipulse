@@ -3,7 +3,8 @@
 /**
  * The harness's composer.json and phpunit.xml: this core from its checkout,
  * each provider from a checkout under /omnipulse/plugins when there is one,
- * from GitHub (branch 1.x) otherwise; every package's tests in one run -
+ * from GitHub (branch 1.x) otherwise, omnisense/contracts the same way from
+ * /omnisense/contracts; every package's tests in one run -
  * Symfony's DependencyInjection, HttpKernel and cache and Twig installed
  * beside them for the bridges' tests (the bare script proves none is needed).
  * /harness/packages/<slug> links to each provider's directory (for
@@ -22,6 +23,25 @@ $suites = ['core' => "$core/Tests"];
 $packages = [];
 $dev = [];
 @mkdir("$out/packages", 0775, true);
+
+// omnisense/contracts, the kernel the family builds on: its checkout under /omnisense/contracts
+// (OMNISENSE_CONTRACTS in .env) when there is one, its tests run beside the family's; GitHub otherwise.
+$contracts = '/omnisense/contracts';
+$meta = is_file("$contracts/composer.json") ? json_decode((string) file_get_contents("$contracts/composer.json"), true) : null;
+if (($meta['name'] ?? null) === 'omnisense/contracts') {
+    $repositories[] = ['type' => 'path', 'url' => $contracts, 'options' => ['symlink' => true, 'versions' => ['omnisense/contracts' => '1.x-dev']]];
+    $tests['Omnisense\\Contracts\\Tests\\'] = "$contracts/Tests/";
+    $suites['contracts'] = "$contracts/Tests";
+    $packages['contracts'] = 'checkout';
+    if (!is_link("$out/packages/contracts") || readlink("$out/packages/contracts") !== $contracts) {
+        @unlink("$out/packages/contracts");
+        symlink($contracts, "$out/packages/contracts");
+    }
+} else {
+    $repositories[] = ['type' => 'git', 'url' => 'https://github.com/glitchr-omnisense/contracts.git'];
+    $packages['contracts'] = 'github';
+}
+$require['omnisense/contracts'] = '1.x-dev';
 foreach ($plugins as $slug => $plugin) {
     $testsNs = $plugin[0];
     $needs = $plugin[1] ?? [];

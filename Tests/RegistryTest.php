@@ -32,8 +32,12 @@ final class RegistryTest extends TestCase
             'bing' => ['factory' => 'search', 'options' => ['api_key' => 'example-not-a-key']],
         ]);
 
-        self::assertSame($registry->get('site'), $registry->search('site'));
-        self::assertSame($registry->get('site'), $registry->audience('site'));
+        $search = $registry->search('site');
+        $audience = $registry->audience('site');
+        self::assertInstanceOf(\Omnipulse\Policy\Guarded::class, $search, 'the provider behind its usage policy\'s guard');
+        self::assertInstanceOf(\Omnipulse\Policy\Guarded::class, $audience);
+        self::assertSame($registry->get('site'), $search->inner());
+        self::assertSame($registry->get('site'), $audience->inner());
         self::assertSame(['site', 'bing'], $registry->names());
         self::assertSame(['fixed', 'search'], $registry->factories());
         self::assertSame(['api_key' => 'example-not-a-key'], $registry->options('bing'));

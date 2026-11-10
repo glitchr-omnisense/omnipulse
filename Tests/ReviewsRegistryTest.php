@@ -17,7 +17,9 @@ final class ReviewsRegistryTest extends TestCase
     {
         $registry = new Registry([new FixedReviewsFactory()], ['stub' => ['factory' => 'fixed-reviews', 'options' => ['host' => 'reviews.example']], 'broken' => ['factory' => 'fixed-reviews']]);
 
-        self::assertSame($registry->get('stub'), $registry->rating('stub'));
+        $rating = $registry->rating('stub');
+        self::assertInstanceOf(\Omnipulse\Policy\Guarded::class, $rating, 'the provider behind its usage policy\'s guard');
+        self::assertSame($registry->get('stub'), $rating->inner());
         self::assertSame('https://reviews.example/write/p1', $registry->writeUrl('stub')->writeUrl(new \Omnipulse\Model\Place('p1')));
         try {
             $registry->replies('stub');
@@ -80,7 +82,9 @@ final class ReviewsRegistryTest extends TestCase
         };
         $registry = new Registry([$factory], ['trustpilot' => ['factory' => 'trustpilot']]);
 
-        self::assertSame($provider, $registry->rating('trustpilot'));
+        $rating = $registry->rating('trustpilot');
+        self::assertInstanceOf(\Omnipulse\Policy\Guarded::class, $rating, 'the provider behind its usage policy\'s guard');
+        self::assertSame($provider, $rating->inner());
         $this->expectException(NotSupportedException::class);
         $this->expectExceptionMessage('The "trustpilot" provider (Trustpilot) does not give replying to a review; it gives: rating.');
         $registry->replies('trustpilot');

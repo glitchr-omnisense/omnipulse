@@ -2,36 +2,26 @@
 
 namespace Omnipulse\Testing;
 
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Contracts\HttpClient\ResponseInterface;
-use Symfony\Contracts\HttpClient\ResponseStreamInterface;
-
 /**
  * An HTTP client that answers from what it was given - a callable of the
  * method, the URL and the options, returning [status, body, headers] - and
  * keeps every request made ($requests): a provider's calls checked with no
- * network.
+ * network. omnisense/contracts' RecordedHttpClient, under omnipulse's name,
+ * with omnipulse's routes(): by method and the end of the path.
  */
-final class RecordedHttpClient implements HttpClientInterface
+final class RecordedHttpClient extends \Omnisense\Contracts\Testing\RecordedHttpClient
 {
-    /** @var list<array{method: string, url: string, options: array<string, mixed>}> */
-    public array $requests = [];
-
-    /** @param \Closure(string, string, array<string, mixed>): array{0: int, 1: string, 2?: array<string, list<string>>} $answer */
-    public function __construct(private readonly \Closure $answer)
-    {
-    }
-
     /**
      * Answers by route: "GET /api/v2/query" => the body (status 200) or
-     * [status, body] - the first route whose method matches and whose path
-     * ends the URL's path; 404 for anything not recorded.
+     * [status, body] or [status, body, headers] (a 429's Retry-After) - the
+     * first route whose method matches and whose path ends the URL's path;
+     * 404 for anything not recorded.
      *
-     * @param array<string, string|array{0: int, 1: string}> $routes
+     * @param array<string, string|array{0: int, 1: string, 2?: array<string, list<string>>}> $routes
      */
-    public static function routes(array $routes): self
+    public static function routes(array $routes): static
     {
-        return new self(static function (string $method, string $url) use ($routes): array {
+        return new static(static function (string $method, string $url) use ($routes): array {
             $path = (string) parse_url($url, \PHP_URL_PATH);
             foreach ($routes as $route => $answer) {
                 [$routeMethod, $routePath] = explode(' ', $route, 2) + [1 => ''];
@@ -42,25 +32,5 @@ final class RecordedHttpClient implements HttpClientInterface
 
             return [404, '{"error":"not recorded: '.$method.' '.$path.'"}'];
         });
-    }
-
-    /** @param array<string, mixed> $options */
-    public function request(string $method, string $url, array $options = []): ResponseInterface
-    {
-        $this->requests[] = ['method' => $method, 'url' => $url, 'options' => $options];
-        $answer = ($this->answer)($method, $url, $options);
-
-        return new RecordedResponse($answer[0], $answer[1], $answer[2] ?? [], $url);
-    }
-
-    public function stream(ResponseInterface|iterable $responses, ?float $timeout = null): ResponseStreamInterface
-    {
-        throw new \LogicException('RecordedHttpClient does not stream.');
-    }
-
-    /** @param array<string, mixed> $options */
-    public function withOptions(array $options): static
-    {
-        return $this;
     }
 }

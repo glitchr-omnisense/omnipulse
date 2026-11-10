@@ -7,7 +7,7 @@ use Omnipulse\Exception\NotFoundException;
 use Omnipulse\Exception\ProviderException;
 use Omnipulse\Exception\UnreachableException;
 use Omnipulse\Support\Data;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use Omnisense\Contracts\Policy\Backoff;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -20,6 +20,10 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * provider's own message when it gives one. The audience's providers call
  * through it.
  *
+ * The call is the family's JsonClient's (omnisense/contracts'): given the
+ * provider's Backoff, a 429 and its Retry-After, or a RateLimit field with
+ * nothing left, hold the provider's next calls (UsageLimitReachedException).
+ *
  * An UnreachableException's message names the method and the path, and the
  * HTTP client's reason without the address it quotes: never the query, where
  * a key may travel (Bing's apikey). Its previous exception is a copy of the
@@ -29,21 +33,23 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 final class JsonApi
 {
-    public function __construct(private readonly HttpClientInterface $http, private readonly string $provider)
+    private readonly JsonClient $client;
+
+    public function __construct(HttpClientInterface $http, private readonly string $provider, ?Backoff $backoff = null)
     {
+        $this->client = new JsonClient($http, $provider, [], $backoff);
     }
 
     /** @param array<string, mixed> $options the HTTP client's options (query, headers, json, body, auth_bearer...) */
     public function request(string $method, string $url, array $options = [], string $what = 'the request'): Data
     {
         try {
-            $response = $this->http->request($method, $url, $options);
-            $status = $response->getStatusCode();
-            $body = $response->getContent(false);
-        } catch (TransportExceptionInterface $e) {
-            throw Redaction::withoutArguments(new UnreachableException(\sprintf('%s could not be reached for %s (%s %s): %s', $this->provider, $what, $method, parse_url($url, \PHP_URL_PATH) ?: '/', self::reason($e->getMessage())), 0, Redaction::copy($e, Redaction::secrets($url, $options))));
+            $answer = $this->client->exchange($method, $url, $options);
+        } catch (UnreachableException $e) {
+            throw Redaction::withoutArguments(new UnreachableException(\sprintf('%s could not be reached for %s (%s %s): %s', $this->provider, $what, $method, parse_url($url, \PHP_URL_PATH) ?: '/', self::reason((string) $e->getPrevious()?->getMessage())), 0, $e->getPrevious()));
         }
-        $decoded = json_decode($body, true);
+        $status = $answer->status;
+        $decoded = json_decode($answer->body, true);
         $message = self::message(Data::of($decoded));
         if (401 === $status || 403 === $status) {
             throw Redaction::withoutArguments(InvalidKeyException::refused($this->provider, $what, $status, $message));
@@ -64,22 +70,12 @@ final class JsonApi
     /**
      * An HTTP client's message without the addresses it quotes: Symfony's
      * ' for "<url>"' dropped, any other address cut to its scheme, host and
-     * path (no credentials, no query, no fragment).
+     * path (no credentials, no query, no fragment) - omnisense/contracts'
+     * JsonClient::reason().
      */
     public static function reason(string $message): string
     {
-        $message = (string) preg_replace('~\s+for\s+"[a-z][a-z0-9+.\-]*://[^"]*"~i', '', $message);
-        $message = (string) preg_replace_callback('~[a-z][a-z0-9+.\-]*://[^\s"\'<>]+~i', static function (array $match): string {
-            $parts = parse_url($match[0]);
-            if (false === $parts || !isset($parts['scheme'], $parts['host'])) {
-                return '(an address)';
-            }
-
-            return $parts['scheme'].'://'.$parts['host'].(isset($parts['port']) ? ':'.$parts['port'] : '').($parts['path'] ?? '');
-        }, $message);
-        $message = rtrim(trim($message), '.');
-
-        return '' !== $message ? $message.'.' : 'no reason given.';
+        return JsonClient::reason($message);
     }
 
     /** The error message an answer carries, under the names APIs give it. */

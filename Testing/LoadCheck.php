@@ -60,6 +60,7 @@ final class LoadCheck
      *
      * @param list<string> $files
      * @param list<string> $allowed path fragments: "/vendor/psr/", "/vendor/omnisense/omnipulse/"...
+     *                              (omnisense/contracts, the kernel every package of the family requires, always is)
      *
      * @return list<string>
      */
@@ -71,7 +72,7 @@ final class LoadCheck
             if (str_starts_with($file, $root) && !str_starts_with($file, $root.'vendor/')) {
                 return false;
             }
-            foreach ([...$allowed, '/vendor/composer/', '/vendor/autoload.php'] as $fragment) {
+            foreach ([...$allowed, '/vendor/composer/', '/vendor/autoload.php', '/vendor/omnisense/contracts/', '/omnisense/contracts/'] as $fragment) {
                 if (str_contains($file, $fragment)) {
                     return false;
                 }

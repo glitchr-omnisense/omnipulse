@@ -2,10 +2,17 @@
 
 namespace Omnipulse\Model;
 
+use Omnisense\Contracts\Policy\Attribution;
+use Omnisense\Contracts\Policy\Caching;
+use Omnisense\Contracts\Policy\Permission;
+use Omnisense\Contracts\Policy\Rights;
+
 /**
  * How what a platform gives may be shown and kept - its own rules, read in
  * its documentation and declared by its package. The family's display
  * follows them; an application that shows things its own way must too.
+ * Its caching and attribution are the platform's usage policy's rights as
+ * well (rights(): what the provider's policy.json declares).
  */
 final readonly class Terms
 {
@@ -35,5 +42,24 @@ final readonly class Terms
     public function allowsCaching(int $seconds): bool
     {
         return null !== $this->cacheFor && $seconds <= $this->cacheFor;
+    }
+
+    /**
+     * The rights these terms give, as omnisense/contracts' usage policy
+     * says them: caching forbidden (0), allowed up to $cacheFor seconds, or
+     * unknown (null: the platform publishes no figure); the attribution
+     * required on display when there is one. What they do not say
+     * (commercial use, storage, redistribution) stays unknown.
+     */
+    public function rights(): Rights
+    {
+        return new Rights(
+            caching: match (true) {
+                null === $this->cacheFor => new Caching(Permission::Unknown),
+                0 === $this->cacheFor => Caching::forbidden(),
+                default => Caching::upTo($this->cacheFor),
+            },
+            attribution: '' !== $this->attribution ? new Attribution(true, $this->attribution, null, ['display']) : new Attribution(),
+        );
     }
 }
