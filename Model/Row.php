@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach\Model;
+namespace Omnipulse\Model;
 
 /** One line of a report: its dimensions' values and its metrics. */
 final readonly class Row

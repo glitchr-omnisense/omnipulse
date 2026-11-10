@@ -1,7 +1,7 @@
 {
-    "name": "omnisense/omnireach",
+    "name": "omnisense/omnipulse",
     "type": "library",
-    "description": "Omnireach: what outside tools know of a site's audience, under any PHP host - search queries, pages and positions from the search engines (Search Console, Bing Webmaster Tools), visitors, entry pages and sources from the analytics tools (Matomo, Plausible, Google Analytics 4), one query and one report whoever answers; a taken-over site's history over any period. Providers are packages of their own (omnireach/search-console, omnireach/bing-webmaster, omnireach/matomo, omnireach/plausible, omnireach/ga4); the Symfony and Laravel bridges live in omnibridge.",
+    "description": "Omnipulse: what outside tools know of a site's audience, under any PHP host - search queries, pages and positions from the search engines (Search Console, Bing Webmaster Tools), visitors, entry pages and sources from the analytics tools (Matomo, Plausible, Google Analytics 4), one query and one report whoever answers; a taken-over site's history over any period. Providers are packages of their own (omnipulse/search-console, omnipulse/bing-webmaster, omnipulse/matomo, omnipulse/plausible, omnipulse/ga4); the Symfony and Laravel bridges live in omnibridge.",
     "keywords": [
         "seo",
         "search-console",
@@ -12,9 +12,9 @@
         "ga4",
         "audience",
         "framework-agnostic",
-        "omnireach"
+        "omnipulse"
     ],
-    "homepage": "https://github.com/glitchr-omnisense/omnireach",
+    "homepage": "https://github.com/glitchr-omnisense/omnipulse",
     "license": "MIT",
     "authors": [
         {
@@ -31,19 +31,20 @@
         "symfony/http-client": "^6.4|^7.0|^8.0"
     },
     "suggest": {
-        "omnireach/bing-webmaster": "Bing Webmaster Tools: queries, pages, clicks, impressions, positions",
-        "omnireach/ga4": "Google Analytics 4 (Data API): visitors, sessions, landing pages, sources",
-        "omnireach/matomo": "Matomo (Reporting API, self-hosted or cloud): visits, entry pages, referrers, countries",
-        "omnireach/plausible": "Plausible (Stats API v2, cloud or self-hosted): visitors, entry pages, sources",
-        "omnireach/search-console": "Google Search Console: queries, pages, countries, devices, clicks, impressions, CTR, positions",
+        "omnipulse/bing-webmaster": "Bing Webmaster Tools: queries, pages, clicks, impressions, positions",
+        "omnipulse/ga4": "Google Analytics 4 (Data API): visitors, sessions, landing pages, sources",
+        "omnipulse/matomo": "Matomo (Reporting API, self-hosted or cloud): visits, entry pages, referrers, countries",
+        "omnipulse/plausible": "Plausible (Stats API v2, cloud or self-hosted): visitors, entry pages, sources",
+        "omnipulse/search-console": "Google Search Console: queries, pages, countries, devices, clicks, impressions, CTR, positions",
         "omnisense/omnibridge": "The host contracts; omnibridge/symfony and omnibridge/laravel wire a family into their host"
     },
     "replace": {
-        "omniscient/omnireach": "self.version"
+        "omniscient/omnireach": "self.version",
+        "omnisense/omnireach": "self.version"
     },
     "autoload": {
         "psr-4": {
-            "Omnireach\\": ""
+            "Omnipulse\\": ""
         },
         "exclude-from-classmap": [
             "/Tests/",
@@ -53,7 +54,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Omnireach\\Tests\\": "Tests/"
+            "Omnipulse\\Tests\\": "Tests/"
         }
     },
     "extra": {

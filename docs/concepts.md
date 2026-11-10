@@ -7,7 +7,7 @@ order: 20
 
 ## Providers and contracts
 
-`Omnireach\ProviderInterface` is one outside tool, configured. What it can be asked comes from the
+`Omnipulse\ProviderInterface` is one outside tool, configured. What it can be asked comes from the
 contracts it implements, one per capability:
 
 | Interface | Method | Default metrics | Implemented by |
@@ -30,7 +30,7 @@ the exceptions of [Errors](errors.md).
 
 ## Capabilities
 
-`Omnireach\Capabilities` (a readonly value) says what a provider is before it is asked anything:
+`Omnipulse\Capabilities` (a readonly value) says what a provider is before it is asked anything:
 
 | Property | Type | Default | |
 |---|---|---|---|
@@ -54,30 +54,30 @@ at a time besides the date, not query and page.`
 
 ## Factory and Config
 
-`Omnireach\ProviderFactoryInterface` builds a provider from options:
+`Omnipulse\ProviderFactoryInterface` builds a provider from options:
 
 | Method | |
 |---|---|
 | `getName(): string` | the name providers are configured with: `search-console`, `matomo`... |
 | `create(array $options = []): ProviderInterface` | a provider, its options checked |
 
-Every provider's factory extends `Omnireach\ProviderFactory`, which does the work:
+Every provider's factory extends `Omnipulse\ProviderFactory`, which does the work:
 
 1. `createConfig($options)` - a `Config` (an `ArrayObject`) holding the options given, then the
    factory's `populate()` fills each key the options did not set with its default;
-2. the keys listed under `omnireach.required_options` are checked: one missing, `''` or `[]` is an
+2. the keys listed under `omnipulse.required_options` are checked: one missing, `''` or `[]` is an
    `InvalidConfigException` listing every missing key (`The "bing-webmaster" provider needs:
    api_key, site.`);
 3. the factory's `build()` returns the provider.
 
-`getName()` is read from the `Config` (`omnireach.factory_name`), so it costs nothing. The reserved
+`getName()` is read from the `Config` (`omnipulse.factory_name`), so it costs nothing. The reserved
 keys a factory sets:
 
 | Key | |
 |---|---|
-| `omnireach.factory_name` | the provider's name |
-| `omnireach.factory_title` | the provider's title |
-| `omnireach.required_options` | the option names that must be filled |
+| `omnipulse.factory_name` | the provider's name |
+| `omnipulse.factory_title` | the provider's title |
+| `omnipulse.required_options` | the option names that must be filled |
 
 `Config` reads options with types:
 
@@ -96,7 +96,7 @@ for their token then).
 
 ## Registry
 
-`Omnireach\Registry` holds the application's providers by name:
+`Omnipulse\Registry` holds the application's providers by name:
 
 ```php
 $registry = new Registry(
@@ -127,7 +127,7 @@ than the configured one (`ReachQuery::$site`).
 
 ## The query
 
-`Omnireach\Model\ReachQuery` (readonly) is what a report is asked for:
+`Omnipulse\Model\ReachQuery` (readonly) is what a report is asked for:
 
 ```php
 new ReachQuery(
@@ -150,7 +150,7 @@ new ReachQuery(
 | `limit` | `int` | at most this many rows, 1000 by default |
 | `site` | `?string` | the site, property or domain to report on, when not the provider's `site` option |
 
-The constructor throws `Omnireach\Exception\InvalidArgumentException` when the period ends before
+The constructor throws `Omnipulse\Exception\InvalidArgumentException` when the period ends before
 it starts, when `limit` is below 1, or when a filter names no dimension (`No "city" dimension to
 filter on.`).
 
@@ -174,7 +174,7 @@ it has a filtered dimension with another value - a row that does not carry the f
 
 ## Dimensions
 
-`Omnireach\Model\Dimension`, a string-backed enum; the value is the key of `Row::$dimensions` and of
+`Omnipulse\Model\Dimension`, a string-backed enum; the value is the key of `Row::$dimensions` and of
 `ReachQuery::$filters`.
 
 | Case | Value | Meaning | Reported by |
@@ -189,7 +189,7 @@ it has a filtered dimension with another value - a row that does not carry the f
 
 ## Metrics
 
-`Omnireach\Model\Metric`, a string-backed enum; the value is the key of `Row::$metrics`.
+`Omnipulse\Model\Metric`, a string-backed enum; the value is the key of `Row::$metrics`.
 
 | Case | Value | Unit | Search | Adds up |
 |---|---|---|---|---|
@@ -214,7 +214,7 @@ A metric the tool does not give for a row is left out of that row, never set to 
 
 ## Rows and reports
 
-`Omnireach\Model\Row` (readonly) is one line of a report:
+`Omnipulse\Model\Row` (readonly) is one line of a report:
 
 | Member | |
 |---|---|
@@ -224,7 +224,7 @@ A metric the tool does not give for a row is left out of that row, never set to 
 | `metric(Metric $m): int\|float\|null` | one metric's value |
 | `toArray(): array` | `['dimensions' => ..., 'metrics' => ...]` |
 
-`Omnireach\Model\Report` (readonly) is a provider's answer:
+`Omnipulse\Model\Report` (readonly) is a provider's answer:
 
 | Member | |
 |---|---|
@@ -241,7 +241,7 @@ The order of the rows is each provider's ([Search performance](usage-search.md),
 
 ## The HTTP layer
 
-Providers call their tool through `Omnireach\Http\JsonApi`, which the core gives them:
+Providers call their tool through `Omnipulse\Http\JsonApi`, which the core gives them:
 `new JsonApi(HttpClientInterface $http, string $provider)`, then
 `request(string $method, string $url, array $options = [], string $what = 'the request'): Data`.
 The options are the HTTP client's (`query`, `json`, `body`, `headers`, `auth_bearer`...). A
@@ -251,7 +251,7 @@ transport error becomes `UnreachableException`; a 401 or 403 `InvalidKeyExceptio
 under `error_description`, `error.message`, `message`, `Message`, `detail`, `errors.0.message`,
 `errors.0.detail`, `fault.faultstring`, then `error` (`JsonApi::message()`).
 
-The answer is an `Omnireach\Support\Data`: the decoded JSON read with types at dotted paths
+The answer is an `Omnipulse\Support\Data`: the decoded JSON read with types at dotted paths
 (`string('rows.0.keys.1')`, `int()`, `float()`, `bool()`, `date()`, `list()`, `data()`,
 `items()`, `raw()`, `has()`), each giving `null` (or an empty list) when the answer holds something
 else - so an answer of an unexpected shape gives empty rows rather than a `\TypeError`.

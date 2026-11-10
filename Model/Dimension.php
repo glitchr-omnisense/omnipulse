@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach\Model;
+namespace Omnipulse\Model;
 
 /** What a report's rows are broken down by, in the words every provider is mapped to. */
 enum Dimension: string

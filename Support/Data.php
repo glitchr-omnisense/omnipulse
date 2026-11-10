@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach\Support;
+namespace Omnipulse\Support;
 
 /**
  * A decoded JSON answer, read with types: a provider asks for the string,

@@ -15,12 +15,12 @@ PHPUnit 11.5: 41 tests, 157 assertions, green.
   provider cannot report, reports and their totals, the registry and its typed getters,
   `JsonApi`'s errors.
 - In plain PHP (`Tests/BareTest.php`): reports asked through a `Registry` and a recorded JSON API,
-  loading nothing but Omnireach and Symfony's HTTP client contracts.
+  loading nothing but Omnipulse and Symfony's HTTP client contracts.
 - Each provider: its requests and its mapping on answers recorded or composed (below), its
   refusals, a refused key, its factory through a `Registry`, and a `BareTest` loading every class
   with the package's requirements alone.
 - PHPStan at the highest level on the core and the five providers, no error baselined
-  (`docker compose run --rm omnireach phpstan`, 2026-10-26).
+  (`docker compose run --rm omnipulse phpstan`, 2026-10-26).
 
 | Provider | Answers its tests use |
 |---|---|
@@ -34,7 +34,7 @@ There is no conformance suite shared by the providers ([Testing](testing.md#no-c
 
 ## What was run live
 
-- `docker compose run --rm omnireach live` (`Omnireach\Matomo\Tests\LiveTest`), 2026-10-24:
+- `docker compose run --rm omnipulse live` (`Omnipulse\Matomo\Tests\LiveTest`), 2026-10-24:
   Matomo's public demo, the whole site over a week and its entry pages day by day.
 - For this manual, 2026-10-26, 14:49-14:51 UTC: the [Installation](installation.md#a-providers-api)
   script against the same demo, and a report by device and with device filters
@@ -60,7 +60,7 @@ None left: those the manuals found were fixed on 2026-10-29.
 
 ## Responsibility
 
-`omnisense/omnireach` and its `omnireach/*` providers are unofficial clients, affiliated with none
+`omnisense/omnipulse` and its `omnipulse/*` providers are unofficial clients, affiliated with none
 of the services they reach. The MIT licence covers the code only and grants no right to any
 service or to its data. Whoever runs them complies with each service's terms (named in each
 provider's README and manual, and in `Capabilities::$terms`) and obtains what they require.

@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach\Exception;
+namespace Omnipulse\Exception;
 
 /** The provider refused the credentials (401, 403): a wrong or revoked key, a token past its time, a scope not granted. */
 final class InvalidKeyException extends ProviderException

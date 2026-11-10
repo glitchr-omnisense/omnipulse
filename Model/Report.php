@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach\Model;
+namespace Omnipulse\Model;
 
 /** A provider's answer to a ReachQuery: its rows, and what to know about them. */
 final readonly class Report

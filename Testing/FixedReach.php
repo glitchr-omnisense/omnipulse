@@ -1,15 +1,15 @@
 <?php
 
-namespace Omnireach\Testing;
+namespace Omnipulse\Testing;
 
-use Omnireach\AudienceInterface;
-use Omnireach\Capabilities;
-use Omnireach\Model\Dimension;
-use Omnireach\Model\Metric;
-use Omnireach\Model\ReachQuery;
-use Omnireach\Model\Report;
-use Omnireach\Model\Row;
-use Omnireach\SearchPerformanceInterface;
+use Omnipulse\AudienceInterface;
+use Omnipulse\Capabilities;
+use Omnipulse\Model\Dimension;
+use Omnipulse\Model\Metric;
+use Omnipulse\Model\ReachQuery;
+use Omnipulse\Model\Report;
+use Omnipulse\Model\Row;
+use Omnipulse\SearchPerformanceInterface;
 
 /**
  * A provider that answers from rows it was given: an application's tests,

@@ -1,8 +1,8 @@
 <?php
 
-namespace Omnireach;
+namespace Omnipulse;
 
-use Omnireach\Exception\InvalidConfigException;
+use Omnipulse\Exception\InvalidConfigException;
 
 /**
  * A provider's configuration while its factory builds it: the options
@@ -34,7 +34,7 @@ final class Config extends \ArrayObject
     {
         $missing = array_values(array_filter($keys, fn (string $key) => !isset($this[$key]) || '' === $this[$key] || [] === $this[$key]));
         if ($missing) {
-            throw new InvalidConfigException(\sprintf('The "%s" provider needs: %s.', $this->string('omnireach.factory_name') ?? '?', implode(', ', $missing)));
+            throw new InvalidConfigException(\sprintf('The "%s" provider needs: %s.', $this->string('omnipulse.factory_name') ?? '?', implode(', ', $missing)));
         }
     }
 

@@ -5,13 +5,13 @@ order: 16
 
 # Laravel
 
-omnibridge/laravel, the bridge that hosts omnibase in Laravel, has no Omnireach provider yet. The
+omnibridge/laravel, the bridge that hosts omnibase in Laravel, has no Omnipulse provider yet. The
 registry is plain PHP: a service provider of the application's builds it once, from a config file,
 with a `symfony/http-client` client (the factories take Symfony's HTTP client contracts; Laravel's
 own HTTP client is Guzzle's, which they do not take).
 
 ```php
-// config/omnireach.php
+// config/omnipulse.php
 return [
     'providers' => [
         'google' => ['factory' => 'search-console', 'options' => [
@@ -27,16 +27,16 @@ return [
 ```
 
 ```php
-// app/Providers/OmnireachServiceProvider.php
+// app/Providers/OmnipulseServiceProvider.php
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Omnireach\Plausible\PlausibleFactory;
-use Omnireach\Registry;
-use Omnireach\SearchConsole\SearchConsoleFactory;
+use Omnipulse\Plausible\PlausibleFactory;
+use Omnipulse\Registry;
+use Omnipulse\SearchConsole\SearchConsoleFactory;
 use Symfony\Component\HttpClient\HttpClient;
 
-final class OmnireachServiceProvider extends ServiceProvider
+final class OmnipulseServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
@@ -46,7 +46,7 @@ final class OmnireachServiceProvider extends ServiceProvider
             return new Registry([
                 new SearchConsoleFactory($http),
                 new PlausibleFactory($http),
-            ], config('omnireach.providers'));
+            ], config('omnipulse.providers'));
         });
     }
 }
@@ -57,9 +57,9 @@ registry where it is needed:
 
 ```php
 use Illuminate\Support\Facades\Cache;
-use Omnireach\Model\Dimension;
-use Omnireach\Model\ReachQuery;
-use Omnireach\Registry;
+use Omnipulse\Model\Dimension;
+use Omnipulse\Model\ReachQuery;
+use Omnipulse\Registry;
 
 final class AudienceController
 {

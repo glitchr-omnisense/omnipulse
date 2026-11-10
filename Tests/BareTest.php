@@ -1,14 +1,14 @@
 <?php
 
-namespace Omnireach\Tests;
+namespace Omnipulse\Tests;
 
-use Omnireach\Registry;
-use Omnireach\Support\Data;
-use Omnireach\Testing\LoadCheck;
+use Omnipulse\Registry;
+use Omnipulse\Support\Data;
+use Omnipulse\Testing\LoadCheck;
 use PHPUnit\Framework\TestCase;
 
 /**
- * omnisense/omnireach with no framework: in PHP processes of their own
+ * omnisense/omnipulse with no framework: in PHP processes of their own
  * (this one has loaded PHPUnit), the harness's bare script asks search
  * and audience reports through a Registry and calls a recorded JSON API - and every
  * class of the package is loaded. Nothing may come from outside the
@@ -20,10 +20,10 @@ final class BareTest extends TestCase
 {
     private const ALLOWED = ['/vendor/symfony/http-client-contracts/', '/vendor/symfony/service-contracts/'];
 
-    public function testReportsAskedByHandLoadNothingButOmnireachAndWhatItRequires(): void
+    public function testReportsAskedByHandLoadNothingButOmnipulseAndWhatItRequires(): void
     {
         $autoload = self::autoload();
-        $process = proc_open([\PHP_BINARY, __DIR__.'/../docker/harness/bin/bare'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, ['OMNIREACH_AUTOLOAD' => $autoload] + getenv());
+        $process = proc_open([\PHP_BINARY, __DIR__.'/../docker/harness/bin/bare'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, ['OMNIPULSE_AUTOLOAD' => $autoload] + getenv());
         self::assertIsResource($process);
         $out = (string) stream_get_contents($pipes[1]);
         $err = (string) stream_get_contents($pipes[2]);
@@ -40,7 +40,7 @@ final class BareTest extends TestCase
         self::assertSame('Example refused the credentials (401) for it: Invalid API key', $report->string('refused'));
 
         $symbols = array_values(array_filter((array) $report->raw('loaded.symbols'), 'is_string'));
-        self::assertContains('Omnireach\Registry', $symbols);
+        self::assertContains('Omnipulse\Registry', $symbols);
         self::assertSame([], LoadCheck::foreign($symbols), 'no class of a framework, an HTTP client or an application');
         $eager = array_map('dirname', array_values(array_filter((array) $report->raw('loaded.eager'), 'is_string')));
         $files = array_values(array_filter((array) $report->raw('loaded.files'), static fn ($f) => \is_string($f) && !\in_array(\dirname($f), $eager, true)));
@@ -49,10 +49,10 @@ final class BareTest extends TestCase
 
     public function testEveryClassLoadsWithTheRequiredPackagesAlone(): void
     {
-        $report = LoadCheck::run(\dirname(__DIR__), 'Omnireach\\', self::autoload());
+        $report = LoadCheck::run(\dirname(__DIR__), 'Omnipulse\\', self::autoload());
 
         self::assertGreaterThan(20, \count($report['loaded']));
-        self::assertContains('Omnireach\Testing\FixedReach', $report['loaded']);
+        self::assertContains('Omnipulse\Testing\FixedReach', $report['loaded']);
         self::assertSame([], $report['foreign']);
         self::assertSame([], LoadCheck::outside($report['files'], \dirname(__DIR__), self::ALLOWED));
     }
@@ -63,7 +63,7 @@ final class BareTest extends TestCase
         if (!class_exists(\Symfony\Component\HttpClient\MockHttpClient::class)) {
             self::markTestSkipped('symfony/http-client is not installed.');
         }
-        $report = LoadCheck::run(\dirname(__DIR__), 'Omnireach\\', self::autoload(), [\Symfony\Component\HttpClient\MockHttpClient::class]);
+        $report = LoadCheck::run(\dirname(__DIR__), 'Omnipulse\\', self::autoload(), [\Symfony\Component\HttpClient\MockHttpClient::class]);
 
         self::assertContains(\Symfony\Component\HttpClient\MockHttpClient::class, $report['foreign']);
         self::assertNotEmpty(preg_grep('~/symfony/http-client/~', LoadCheck::outside($report['files'], \dirname(__DIR__), self::ALLOWED)));
@@ -71,6 +71,6 @@ final class BareTest extends TestCase
 
     private static function autoload(): string
     {
-        return LoadCheck::autoload(Registry::class, self::class, \dirname(__DIR__)) ?? self::markTestSkipped('omnireach is installed in an application here, or no autoloader knows its tests: the bare check is the package\'s own.');
+        return LoadCheck::autoload(Registry::class, self::class, \dirname(__DIR__)) ?? self::markTestSkipped('omnipulse is installed in an application here, or no autoloader knows its tests: the bare check is the package\'s own.');
     }
 }

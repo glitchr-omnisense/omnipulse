@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach;
+namespace Omnipulse;
 
 /** Builds a provider from its options (a key, a site, a server URL...). */
 interface ProviderFactoryInterface

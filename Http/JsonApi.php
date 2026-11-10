@@ -1,19 +1,19 @@
 <?php
 
-namespace Omnireach\Http;
+namespace Omnipulse\Http;
 
-use Omnireach\Exception\InvalidKeyException;
-use Omnireach\Exception\NotFoundException;
-use Omnireach\Exception\ProviderException;
-use Omnireach\Exception\UnreachableException;
-use Omnireach\Support\Data;
+use Omnipulse\Exception\InvalidKeyException;
+use Omnipulse\Exception\NotFoundException;
+use Omnipulse\Exception\ProviderException;
+use Omnipulse\Exception\UnreachableException;
+use Omnipulse\Support\Data;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * A JSON API called through the application's HTTP client (Symfony's
  * contracts: its own client, or a MockHttpClient in a test), the answer
- * turned into Data and every failure into one of omnireach's exceptions:
+ * turned into Data and every failure into one of omnipulse's exceptions:
  * not reached (UnreachableException), the key refused (401, 403:
  * InvalidKeyException), nothing there (404: NotFoundException), any other
  * error or an answer that is not JSON (ProviderException) - with the

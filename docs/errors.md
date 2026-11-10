@@ -5,7 +5,7 @@ order: 50
 
 # Errors
 
-Every exception Omnireach throws implements `Omnireach\Exception\OmnireachException` (a
+Every exception Omnipulse throws implements `Omnipulse\Exception\OmnipulseException` (a
 `\Throwable`):
 
 | Exception | Extends | When |
@@ -62,11 +62,11 @@ The tool's own message is added after a colon when the answer carries one
 
 | Where | Catch |
 |---|---|
-| a dashboard panel | `OmnireachException`: show "unavailable" and the last report cached, log the message |
+| a dashboard panel | `OmnipulseException`: show "unavailable" and the last report cached, log the message |
 | a screen that offers several providers | `NotSupportedException`, or check `capabilities()` first: the provider cannot answer that query |
 | a scheduled export | `UnreachableException` and a `ProviderException` of code 429 or 5xx: retry later; `InvalidKeyException`: alert someone, the key was revoked or lost its access |
 | building the registry, a deploy | `InvalidConfigException`: a configuration error, to fix, not to retry |
-| a form that builds a query | `Omnireach\Exception\InvalidArgumentException`: the period or the limit typed is wrong |
+| a form that builds a query | `Omnipulse\Exception\InvalidArgumentException`: the period or the limit typed is wrong |
 
 A tool's message is the tool's, untranslated: show a message of the application's, keep the
 tool's for the logs.

@@ -1,9 +1,9 @@
 <?php
 
-namespace Omnireach\Exception;
+namespace Omnipulse\Exception;
 
 /** The provider answered, and not with what was asked: an error status, an answer that is not JSON. */
-class ProviderException extends \RuntimeException implements OmnireachException
+class ProviderException extends \RuntimeException implements OmnipulseException
 {
     public static function answered(string $provider, string $what, int $status, ?string $message = null): self
     {

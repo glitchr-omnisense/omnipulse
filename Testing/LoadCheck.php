@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach\Testing;
+namespace Omnipulse\Testing;
 
 /**
  * The check every package of the family runs in its BareTest: each class
@@ -16,7 +16,7 @@ final class LoadCheck
 
     /**
      * @param string       $root      the package's directory
-     * @param string       $namespace its namespace, "Omnireach\\Billetweb\\"
+     * @param string       $namespace its namespace, "Omnipulse\\Billetweb\\"
      * @param string       $autoload  the autoload.php that knows it
      * @param list<string> $extra     classes to load besides (the check that it is not blind)
      *
@@ -59,7 +59,7 @@ final class LoadCheck
      * directories allowed.
      *
      * @param list<string> $files
-     * @param list<string> $allowed path fragments: "/vendor/psr/", "/vendor/omnisense/omnireach/"...
+     * @param list<string> $allowed path fragments: "/vendor/psr/", "/vendor/omnisense/omnipulse/"...
      *
      * @return list<string>
      */

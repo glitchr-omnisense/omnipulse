@@ -5,14 +5,14 @@ order: 80
 
 # Writing a provider
 
-A provider is a package `omnireach/<name>`, namespace `Omnireach\<Name>\`, with a factory and a
-provider class. It requires `omnisense/omnireach` and `symfony/http-client-contracts`, nothing else
+A provider is a package `omnipulse/<name>`, namespace `Omnipulse\<Name>\`, with a factory and a
+provider class. It requires `omnisense/omnipulse` and `symfony/http-client-contracts`, nothing else
 (`symfony/http-client` and PHPUnit in `require-dev`).
 
 ## The rules
 
-- **The factory** extends `Omnireach\ProviderFactory`: `populate()` sets its name
-  (`omnireach.factory_name`, kebab-case: `search-console`), its title, its required options and
+- **The factory** extends `Omnipulse\ProviderFactory`: `populate()` sets its name
+  (`omnipulse.factory_name`, kebab-case: `search-console`), its title, its required options and
   the defaults of the others; `build()` returns the provider. The HTTP client comes through the
   factory's constructor, never created inside; with none, `build()` throws
   `InvalidConfigException`.
@@ -28,7 +28,7 @@ provider class. It requires `omnisense/omnireach` and `symfony/http-client-contr
   seconds, dates `Y-m-d`, devices `desktop`/`mobile`/`tablet`, countries upper case, pages as the
   tool gives them (full URLs for search engines, paths for analytics). A metric the tool does not
   give for a row is left out of it, never zero.
-- **Calls** go through `Omnireach\Http\JsonApi` (every failure becomes the family's exception,
+- **Calls** go through `Omnipulse\Http\JsonApi` (every failure becomes the family's exception,
   with the tool's message); answers are read with `Support\Data`, so an unexpected shape gives
   empty values, never a `\TypeError`. Keys go in a header or a body when the tool allows it, not in
   the URL, where logs keep them (Bing's API takes its key only in the query string; `JsonApi`
@@ -44,20 +44,20 @@ provider class. It requires `omnisense/omnireach` and `symfony/http-client-contr
 <?php
 
 // ExampleFactory.php and ExampleProvider.php, here in one listing
-namespace Omnireach\Example;
+namespace Omnipulse\Example;
 
-use Omnireach\AudienceInterface;
-use Omnireach\Capabilities;
-use Omnireach\Config;
-use Omnireach\Exception\InvalidConfigException;
-use Omnireach\Http\JsonApi;
-use Omnireach\Model\Dimension;
-use Omnireach\Model\Metric;
-use Omnireach\Model\ReachQuery;
-use Omnireach\Model\Report;
-use Omnireach\Model\Row;
-use Omnireach\ProviderFactory;
-use Omnireach\ProviderInterface;
+use Omnipulse\AudienceInterface;
+use Omnipulse\Capabilities;
+use Omnipulse\Config;
+use Omnipulse\Exception\InvalidConfigException;
+use Omnipulse\Http\JsonApi;
+use Omnipulse\Model\Dimension;
+use Omnipulse\Model\Metric;
+use Omnipulse\Model\ReachQuery;
+use Omnipulse\Model\Report;
+use Omnipulse\Model\Row;
+use Omnipulse\ProviderFactory;
+use Omnipulse\ProviderInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class ExampleFactory extends ProviderFactory
@@ -69,9 +69,9 @@ final class ExampleFactory extends ProviderFactory
     protected function populate(Config $c): void
     {
         $c->defaults([
-            'omnireach.factory_name' => 'example',
-            'omnireach.factory_title' => 'Example Analytics',
-            'omnireach.required_options' => ['api_key', 'site'],
+            'omnipulse.factory_name' => 'example',
+            'omnipulse.factory_title' => 'Example Analytics',
+            'omnipulse.required_options' => ['api_key', 'site'],
             'url' => 'https://api.example-analytics.test',
         ]);
     }
@@ -174,18 +174,18 @@ The second row has no `bounce_rate`: the answer gave none.
 - **`Tests/BareTest.php`**: every class of the package loaded alone, nothing foreign:
 
 ```php
-use Omnireach\Testing\LoadCheck;
+use Omnipulse\Testing\LoadCheck;
 
 $autoload = LoadCheck::autoload(ExampleProvider::class, self::class, \dirname(__DIR__)) ?? self::markTestSkipped('installed in an application here');
-$report = LoadCheck::run(\dirname(__DIR__), 'Omnireach\\Example\\', $autoload);
+$report = LoadCheck::run(\dirname(__DIR__), 'Omnipulse\\Example\\', $autoload);
 
 self::assertContains(ExampleProvider::class, $report['loaded']);
 self::assertSame([], $report['foreign']);
-self::assertSame([], LoadCheck::outside($report['files'], \dirname(__DIR__), ['/vendor/omnisense/omnireach/', '/omnireach/core/', '/vendor/symfony/http-client-contracts/', '/vendor/symfony/service-contracts/']));
+self::assertSame([], LoadCheck::outside($report['files'], \dirname(__DIR__), ['/vendor/omnisense/omnipulse/', '/omnipulse/core/', '/vendor/symfony/http-client-contracts/', '/vendor/symfony/service-contracts/']));
 ```
 
 - **`Tests/LiveTest.php`** (`#[Group('live')]`), only for what needs no account, never in the
-  default run: `docker compose run --rm omnireach live`.
+  default run: `docker compose run --rm omnipulse live`.
 
 The provider joins the harness with a line in `docker/harness/plugins.php` (its slug and its tests'
 namespace), and its README states what was verified and what was not, and the tool's terms

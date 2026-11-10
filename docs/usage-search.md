@@ -7,15 +7,15 @@ order: 31
 
 `SearchPerformanceInterface::searchPerformance(ReachQuery $query): Report` reports how the site
 shows in a search engine: the queries it appears for, its pages shown, their clicks, impressions,
-click-through rate and average position. Two providers answer it: `omnireach/search-console` and
-`omnireach/bing-webmaster`. Metrics by default: clicks, impressions, ctr, position.
+click-through rate and average position. Two providers answer it: `omnipulse/search-console` and
+`omnipulse/bing-webmaster`. Metrics by default: clicks, impressions, ctr, position.
 
 ## The queries of a period
 
 ```php
-use Omnireach\Model\Dimension;
-use Omnireach\Model\Metric;
-use Omnireach\Model\ReachQuery;
+use Omnipulse\Model\Dimension;
+use Omnipulse\Model\Metric;
+use Omnipulse\Model\ReachQuery;
 
 $report = $registry->search('google')->searchPerformance(ReachQuery::lastDays(28, [Dimension::Query]));
 
@@ -74,7 +74,7 @@ A query one provider cannot answer is refused by its capabilities before any cal
 screen offers several providers, or catch it and show "not available from Bing".
 
 ```php
-use Omnireach\Exception\NotSupportedException;
+use Omnipulse\Exception\NotSupportedException;
 
 $query = ReachQuery::lastDays(90, [Dimension::Query, Dimension::Country]);
 foreach (['google', 'bing'] as $name) {

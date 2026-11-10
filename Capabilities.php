@@ -1,11 +1,11 @@
 <?php
 
-namespace Omnireach;
+namespace Omnipulse;
 
-use Omnireach\Exception\NotSupportedException;
-use Omnireach\Model\Dimension;
-use Omnireach\Model\Metric;
-use Omnireach\Model\ReachQuery;
+use Omnipulse\Exception\NotSupportedException;
+use Omnipulse\Model\Dimension;
+use Omnipulse\Model\Metric;
+use Omnipulse\Model\ReachQuery;
 
 /**
  * What a provider is, said before it is asked anything: which reports, by

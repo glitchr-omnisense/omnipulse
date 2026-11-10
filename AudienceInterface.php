@@ -1,9 +1,9 @@
 <?php
 
-namespace Omnireach;
+namespace Omnipulse;
 
-use Omnireach\Model\Report;
-use Omnireach\Model\ReachQuery;
+use Omnipulse\Model\Report;
+use Omnipulse\Model\ReachQuery;
 
 /**
  * Who visits the site, as an analytics tool counted it: visitors, visits,

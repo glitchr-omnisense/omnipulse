@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach;
+namespace Omnipulse;
 
 /**
  * One outside tool that knows the site's audience, configured: Search

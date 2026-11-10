@@ -26,9 +26,9 @@ Every factory takes the HTTP client in its constructor - `new MatomoFactory($htt
 to build without one. Options read as strings accept any scalar (a site id given as an integer
 included); an empty string is the same as an option not given.
 
-## omnireach/search-console
+## omnipulse/search-console
 
-Factory `Omnireach\SearchConsole\SearchConsoleFactory`, name `search-console`.
+Factory `Omnipulse\SearchConsole\SearchConsoleFactory`, name `search-console`.
 
 | Option | Type | Default | Required | |
 |---|---|---|---|---|
@@ -42,9 +42,9 @@ With neither `credentials` nor `access_token`, `create()` throws `InvalidConfigE
 Google API needs a service account's key or an access token.`); credentials that are neither a key
 nor the path of one too. With both, the access token is used and the key never.
 
-## omnireach/bing-webmaster
+## omnipulse/bing-webmaster
 
-Factory `Omnireach\BingWebmaster\BingWebmasterFactory`, name `bing-webmaster`.
+Factory `Omnipulse\BingWebmaster\BingWebmasterFactory`, name `bing-webmaster`.
 
 | Option | Type | Default | Required | |
 |---|---|---|---|---|
@@ -52,9 +52,9 @@ Factory `Omnireach\BingWebmaster\BingWebmasterFactory`, name `bing-webmaster`.
 | `site` | string | - | yes | the site as verified there: `https://example.org/` |
 | `url` | string | `https://ssl.bing.com/webmaster/api.svc/json` | no | the JSON endpoint's base URL |
 
-## omnireach/matomo
+## omnipulse/matomo
 
-Factory `Omnireach\Matomo\MatomoFactory`, name `matomo`.
+Factory `Omnipulse\Matomo\MatomoFactory`, name `matomo`.
 
 | Option | Type | Default | Required | |
 |---|---|---|---|---|
@@ -62,9 +62,9 @@ Factory `Omnireach\Matomo\MatomoFactory`, name `matomo`.
 | `site` | string | - | yes | the site's id (`idSite`) |
 | `token` | string | `anonymous` | no | a `token_auth` with view access; `anonymous` for reports anyone may view |
 
-## omnireach/plausible
+## omnipulse/plausible
 
-Factory `Omnireach\Plausible\PlausibleFactory`, name `plausible`.
+Factory `Omnipulse\Plausible\PlausibleFactory`, name `plausible`.
 
 | Option | Type | Default | Required | |
 |---|---|---|---|---|
@@ -72,9 +72,9 @@ Factory `Omnireach\Plausible\PlausibleFactory`, name `plausible`.
 | `site` | string | - | yes | the site's domain as Plausible knows it: `example.org` |
 | `url` | string | `https://plausible.io` | no | plausible.io, or a self-hosted Community Edition |
 
-## omnireach/ga4
+## omnipulse/ga4
 
-Factory `Omnireach\Ga4\Ga4Factory`, name `ga4`.
+Factory `Omnipulse\Ga4\Ga4Factory`, name `ga4`.
 
 | Option | Type | Default | Required | |
 |---|---|---|---|---|
@@ -91,7 +91,7 @@ replaces the provider's `site` (or `property`) for that report only.
 
 ## The fixed provider (testing)
 
-`Omnireach\Testing\FixedReachFactory`, name `fixed`, takes its rows in its constructor
+`Omnipulse\Testing\FixedReachFactory`, name `fixed`, takes its rows in its constructor
 (`new FixedReachFactory($searchRows, $audienceRows)`) and one option:
 
 | Option | Type | Default | Required | |

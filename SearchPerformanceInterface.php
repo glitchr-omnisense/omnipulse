@@ -1,9 +1,9 @@
 <?php
 
-namespace Omnireach;
+namespace Omnipulse;
 
-use Omnireach\Model\Report;
-use Omnireach\Model\ReachQuery;
+use Omnipulse\Model\Report;
+use Omnipulse\Model\ReachQuery;
 
 /**
  * How the site shows in a search engine: the queries it appears for, its

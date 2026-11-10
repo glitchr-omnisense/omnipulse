@@ -1,9 +1,9 @@
 <?php
 
-namespace Omnireach\Exception;
+namespace Omnipulse\Exception;
 
 /** A provider asked for what it cannot do: a dimension it does not report, search queries from an analytics tool. */
-final class NotSupportedException extends \LogicException implements OmnireachException
+final class NotSupportedException extends \LogicException implements OmnipulseException
 {
     public static function capability(object $provider, string $name, string $capability): self
     {

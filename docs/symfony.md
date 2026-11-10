@@ -5,7 +5,7 @@ order: 15
 
 # Symfony
 
-There is no Omnireach bundle, and omnibridge/symfony has no Omnireach wiring yet: a Symfony
+There is no Omnipulse bundle, and omnibridge/symfony has no Omnipulse wiring yet: a Symfony
 application declares the registry as a service of its own. Every factory takes the HTTP client as
 its one constructor argument (`?Symfony\Contracts\HttpClient\HttpClientInterface`), which
 autowiring fills with the application's `http_client` service (FrameworkBundle's `http_client`
@@ -19,14 +19,14 @@ services:
     _defaults:
         autowire: true
 
-    Omnireach\SearchConsole\SearchConsoleFactory: ~
-    Omnireach\Matomo\MatomoFactory: ~
+    Omnipulse\SearchConsole\SearchConsoleFactory: ~
+    Omnipulse\Matomo\MatomoFactory: ~
 
-    Omnireach\Registry:
+    Omnipulse\Registry:
         arguments:
             $factories:
-                - '@Omnireach\SearchConsole\SearchConsoleFactory'
-                - '@Omnireach\Matomo\MatomoFactory'
+                - '@Omnipulse\SearchConsole\SearchConsoleFactory'
+                - '@Omnipulse\Matomo\MatomoFactory'
             $config:
                 google:
                     factory: search-console
@@ -53,24 +53,24 @@ the JSON works as well as a path. The factories can also be gathered by a tag ra
 ```yaml
 services:
     _instanceof:
-        Omnireach\ProviderFactoryInterface:
-            tags: ['omnireach.factory']
+        Omnipulse\ProviderFactoryInterface:
+            tags: ['omnipulse.factory']
 
-    Omnireach\Registry:
+    Omnipulse\Registry:
         arguments:
-            $factories: !tagged_iterator omnireach.factory
-            $config: '%omnireach.providers%'
+            $factories: !tagged_iterator omnipulse.factory
+            $config: '%omnipulse.providers%'
 ```
 
 with the factories declared as services (or loaded by a `resource:` line) and the providers'
-configuration in a parameter `omnireach.providers` of the same shape as `$config` above.
+configuration in a parameter `omnipulse.providers` of the same shape as `$config` above.
 
 ## Using it
 
 ```php
-use Omnireach\Model\Dimension;
-use Omnireach\Model\ReachQuery;
-use Omnireach\Registry;
+use Omnipulse\Model\Dimension;
+use Omnipulse\Model\ReachQuery;
+use Omnipulse\Registry;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -94,7 +94,7 @@ final class SearchPanel
 
 Nothing is built when the container compiles: a provider is built, and its required options
 checked, the first time the registry is asked for it (`get()`, `search()`, `audience()`), then kept
-for the rest of the request. A report is not cached by Omnireach: the tools' quotas (Search
+for the rest of the request. A report is not cached by Omnipulse: the tools' quotas (Search
 Console's load quotas, Plausible's 600 requests an hour) make the application's cache worth it, as
 above; `Report::toArray()` gives a plain array to keep.
 

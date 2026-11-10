@@ -1,8 +1,8 @@
 <?php
 
-namespace Omnireach\Model;
+namespace Omnipulse\Model;
 
-use Omnireach\Exception\InvalidArgumentException;
+use Omnipulse\Exception\InvalidArgumentException;
 
 /**
  * What a report is asked for: a period (whole days, both included), the

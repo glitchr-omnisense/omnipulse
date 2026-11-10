@@ -5,19 +5,19 @@ order: 60
 
 # Testing
 
-Testing an application that reports with Omnireach. Writing a provider and its tests:
+Testing an application that reports with Omnipulse. Writing a provider and its tests:
 [Writing a provider](providers.md).
 
 ## The fixed provider as a fake
 
-`Omnireach\Testing\FixedReach` answers both contracts from rows it was given, with no network; its
+`Omnipulse\Testing\FixedReach` answers both contracts from rows it was given, with no network; its
 factory, `FixedReachFactory`, registers it under the name `fixed`. Configure the provider the
 application uses with it in tests:
 
 ```php
-use Omnireach\Model\Row;
-use Omnireach\Registry;
-use Omnireach\Testing\FixedReachFactory;
+use Omnipulse\Model\Row;
+use Omnipulse\Registry;
+use Omnipulse\Testing\FixedReachFactory;
 
 $registry = new Registry([new FixedReachFactory(
     search: [new Row(['query' => 'atelier poterie', 'date' => '2026-10-20'], ['clicks' => 12, 'impressions' => 340])],
@@ -43,18 +43,18 @@ What it does with a query:
 ## A provider on recorded answers
 
 To test the application's handling of a real tool's answers - and of its failures - give the
-provider's factory `Omnireach\Testing\RecordedHttpClient` (or Symfony's `MockHttpClient`):
+provider's factory `Omnipulse\Testing\RecordedHttpClient` (or Symfony's `MockHttpClient`):
 
 ```php
-use Omnireach\Exception\InvalidKeyException;
-use Omnireach\Model\Dimension;
-use Omnireach\Model\Metric;
-use Omnireach\Model\ReachQuery;
-use Omnireach\Model\Row;
-use Omnireach\Plausible\PlausibleFactory;
-use Omnireach\Registry;
-use Omnireach\Testing\FixedReachFactory;
-use Omnireach\Testing\RecordedHttpClient;
+use Omnipulse\Exception\InvalidKeyException;
+use Omnipulse\Model\Dimension;
+use Omnipulse\Model\Metric;
+use Omnipulse\Model\ReachQuery;
+use Omnipulse\Model\Row;
+use Omnipulse\Plausible\PlausibleFactory;
+use Omnipulse\Registry;
+use Omnipulse\Testing\FixedReachFactory;
+use Omnipulse\Testing\RecordedHttpClient;
 use PHPUnit\Framework\TestCase;
 
 final class EntryPagesPanelTest extends TestCase
@@ -129,7 +129,7 @@ real client called with `getContent(false)`. A network error cannot be recorded 
 
 ## The load check
 
-`Omnireach\Testing\LoadCheck` is the check every package of the family runs in its `BareTest`: each
+`Omnipulse\Testing\LoadCheck` is the check every package of the family runs in its `BareTest`: each
 class of the package loaded in a PHP process of its own, then what came from outside.
 
 | Member | |

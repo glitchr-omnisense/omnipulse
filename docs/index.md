@@ -1,12 +1,12 @@
-# omnisense/omnireach
+# omnisense/omnipulse
 
-Omnireach is one PHP contract for what outside tools know of a site's audience. The search engines
+Omnipulse is one PHP contract for what outside tools know of a site's audience. The search engines
 say which queries the site shows for, on which pages, at which position and with how many clicks;
 the analytics tools say who visits, from where, landing on which page. An application asks every
 tool the same question - a `ReachQuery`: a period of whole days, the dimensions to break it down
 by, the metrics, exact filters, a limit - and gets the same answer back: a `Report` of `Row`s, in
-one set of units whoever answered. Each tool is a package of its own (`omnireach/search-console`,
-`omnireach/matomo`...) that turns the query into the tool's API calls.
+one set of units whoever answered. Each tool is a package of its own (`omnipulse/search-console`,
+`omnipulse/matomo`...) that turns the query into the tool's API calls.
 
 ```php
 $google = $registry->search('google');            // a search engine: SearchPerformanceInterface
@@ -25,8 +25,8 @@ terms and limits), and a query it cannot answer is refused before any call. The 
 framework: it requires `symfony/http-client-contracts` and nothing else, and every provider takes
 the application's HTTP client in its factory's constructor.
 
-Published as `omnisense/omnireach` (it `replace`s the former name `omniscient/omnireach`). The
-namespace is `Omnireach\`; providers keep the `omnireach/` vendor and the `Omnireach\<Provider>\`
+Published as `omnisense/omnipulse` (it `replace`s the former name `omniscient/omnipulse`). The
+namespace is `Omnipulse\`; providers keep the `omnipulse/` vendor and the `Omnipulse\<Provider>\`
 namespace.
 
 ## When to use it
@@ -51,13 +51,13 @@ means its `combined` is `false`: one dimension besides the date.
 
 | Package | Factory name | Contract | Dimensions | Metrics | Credentials |
 |---|---|---|---|---|---|
-| [`omnireach/search-console`](https://github.com/glitchr-omnisense/omnireach-search-console) | `search-console` | search performance | query, page, country, device, date (combined) | clicks, impressions, ctr, position | a service account's key, or an access token |
-| [`omnireach/bing-webmaster`](https://github.com/glitchr-omnisense/omnireach-bing-webmaster) | `bing-webmaster` | search performance | query or page, date (one at a time) | clicks, impressions, ctr, position | an API key |
-| [`omnireach/matomo`](https://github.com/glitchr-omnisense/omnireach-matomo) | `matomo` | audience | entry page, page, source, country or device, date (one at a time) | visitors, visits, pageviews, bounce rate, visit duration | a `token_auth`, or none for public reports |
-| [`omnireach/plausible`](https://github.com/glitchr-omnisense/omnireach-plausible) | `plausible` | audience | page, entry page, source, country, device, date (combined) | visitors, visits, pageviews, bounce rate, visit duration | a Stats API key |
-| [`omnireach/ga4`](https://github.com/glitchr-omnisense/omnireach-ga4) | `ga4` | audience | page, entry page, source, country, device, date (combined) | visitors, visits, pageviews, bounce rate, visit duration | a service account's key, or an access token |
+| [`omnipulse/search-console`](https://github.com/glitchr-omnisense/omnipulse-search-console) | `search-console` | search performance | query, page, country, device, date (combined) | clicks, impressions, ctr, position | a service account's key, or an access token |
+| [`omnipulse/bing-webmaster`](https://github.com/glitchr-omnisense/omnipulse-bing-webmaster) | `bing-webmaster` | search performance | query or page, date (one at a time) | clicks, impressions, ctr, position | an API key |
+| [`omnipulse/matomo`](https://github.com/glitchr-omnisense/omnipulse-matomo) | `matomo` | audience | entry page, page, source, country or device, date (one at a time) | visitors, visits, pageviews, bounce rate, visit duration | a `token_auth`, or none for public reports |
+| [`omnipulse/plausible`](https://github.com/glitchr-omnisense/omnipulse-plausible) | `plausible` | audience | page, entry page, source, country, device, date (combined) | visitors, visits, pageviews, bounce rate, visit duration | a Stats API key |
+| [`omnipulse/ga4`](https://github.com/glitchr-omnisense/omnipulse-ga4) | `ga4` | audience | page, entry page, source, country, device, date (combined) | visitors, visits, pageviews, bounce rate, visit duration | a service account's key, or an access token |
 
-No provider answers both contracts; the core's test provider, `Omnireach\Testing\FixedReach`,
+No provider answers both contracts; the core's test provider, `Omnipulse\Testing\FixedReach`,
 does ([Testing](testing.md)). Each provider's own manual lists its options, the calls it makes and
 how it maps the tool's answer.
 

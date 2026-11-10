@@ -1,11 +1,11 @@
 <?php
 
-namespace Omnireach\Testing;
+namespace Omnipulse\Testing;
 
-use Omnireach\Config;
-use Omnireach\Model\Row;
-use Omnireach\ProviderFactory;
-use Omnireach\ProviderInterface;
+use Omnipulse\Config;
+use Omnipulse\Model\Row;
+use Omnipulse\ProviderFactory;
+use Omnipulse\ProviderInterface;
 
 /** FixedReach under the name "fixed", for a Registry. */
 final class FixedReachFactory extends ProviderFactory
@@ -20,7 +20,7 @@ final class FixedReachFactory extends ProviderFactory
 
     protected function populate(Config $c): void
     {
-        $c->defaults(['omnireach.factory_name' => 'fixed', 'omnireach.factory_title' => 'Fixed', 'omnireach.required_options' => []]);
+        $c->defaults(['omnipulse.factory_name' => 'fixed', 'omnipulse.factory_title' => 'Fixed', 'omnipulse.required_options' => []]);
     }
 
     protected function build(Config $c): ProviderInterface

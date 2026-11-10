@@ -2,6 +2,16 @@
 
 ## Unreleased (1.x)
 
+### Changed
+- `omnisense/omnireach` is now `omnisense/omnipulse` (2026-11-10: the family is renamed before
+  omnireview and omnifund merge into it): the namespace `Omnipulse\` (`OmnireachException` is
+  `OmnipulseException`), the configuration keys `omnipulse.factory_name`, `omnipulse.factory_title`
+  and `omnipulse.required_options`, the harness's `OMNIPULSE_AUTOLOAD` and `OMNIPULSE_PLUGINS`, the
+  providers `omnipulse/<provider>` at `glitchr-omnisense/omnipulse-<provider>`. `composer.json`
+  replaces `omnisense/omnireach` (and `omniscient/omnireach`, as before), so that a project never
+  installs both; the namespace changed, so code that used `Omnireach\` moves to `Omnipulse\`.
+
+
 ### Fixed
 - No exception `JsonApi::request()` throws keeps its trace's arguments: an error answered (a refused key,
   nothing there, a server error, a body that is not JSON) kept the request's options - the query,
@@ -19,7 +29,7 @@
   URL, so Bing's `apikey=` stood in the message.
 
 ### Added
-- `Omnireach\Http\Redaction`: a request's secrets (`secrets()`), a text without them (`text()`),
+- `Omnipulse\Http\Redaction`: a request's secrets (`secrets()`), a text without them (`text()`),
   a failure's copy to wrap in its place (`copy()`), a trace without arguments
   (`withoutArguments()`).
-- `Omnireach\Http\JsonApi::reason()`: an HTTP client's message without the addresses it quotes.
+- `Omnipulse\Http\JsonApi::reason()`: an HTTP client's message without the addresses it quotes.

@@ -1,11 +1,11 @@
 <?php
 
-namespace Omnireach;
+namespace Omnipulse;
 
 /**
- * A provider's factory fills a Config - its name ("omnireach.factory_name"),
- * its title ("omnireach.factory_title"), the options it needs
- * ("omnireach.required_options") and the defaults of the others - then builds
+ * A provider's factory fills a Config - its name ("omnipulse.factory_name"),
+ * its title ("omnipulse.factory_title"), the options it needs
+ * ("omnipulse.required_options") and the defaults of the others - then builds
  * the provider from it.
  *
  * Nothing here calls anything: a factory whose provider is reached over
@@ -16,13 +16,13 @@ abstract class ProviderFactory implements ProviderFactoryInterface
 {
     public function getName(): string
     {
-        return $this->createConfig()->string('omnireach.factory_name') ?? static::class;
+        return $this->createConfig()->string('omnipulse.factory_name') ?? static::class;
     }
 
     public function create(array $options = []): ProviderInterface
     {
         $config = $this->createConfig($options);
-        $required = $config->get('omnireach.required_options', []);
+        $required = $config->get('omnipulse.required_options', []);
         $config->validateNotEmpty(\is_array($required) ? array_values(array_filter($required, 'is_string')) : []);
 
         return $this->build($config);

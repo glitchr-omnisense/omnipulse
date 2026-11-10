@@ -16,4 +16,4 @@ jobs:
   package:
     uses: glitchr-studio/ci/.github/workflows/php-package.yml@main
     with:
-      smoke-class: 'Omnireach\Registry'
+      smoke-class: 'Omnipulse\Registry'

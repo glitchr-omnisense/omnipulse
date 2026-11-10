@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach\Http;
+namespace Omnipulse\Http;
 
 /**
  * What a failed call may carry of its credentials, taken out before the

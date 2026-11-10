@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach\Testing;
+namespace Omnipulse\Testing;
 
 use Symfony\Contracts\HttpClient\ResponseInterface;
 

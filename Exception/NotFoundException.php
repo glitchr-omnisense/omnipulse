@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach\Exception;
+namespace Omnipulse\Exception;
 
 /** The provider has nothing under that identifier (404): a site or a property that does not exist or is not this account's. */
 final class NotFoundException extends ProviderException

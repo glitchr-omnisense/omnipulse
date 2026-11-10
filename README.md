@@ -1,4 +1,4 @@
-# omnisense/omnireach
+# omnisense/omnipulse
 
 What outside tools know of a site's audience, under any PHP host. The search engines say which
 queries the site shows for, on which pages, at which position and with how many clicks; the
@@ -7,11 +7,14 @@ period, dimensions, metrics, exact filters) and one report (`Report` of `Row`s) 
 the history of a taken-over site over any period included. Plain PHP: no framework in `require`,
 the application's HTTP client injected (Symfony's HTTP client contracts).
 
+Formerly `omnisense/omnireach` (renamed omnipulse on 2026-11-10: `Omnireach\` is now `Omnipulse\`, the
+providers `omnipulse/<provider>`; this package replaces the former name).
+
 ```php
-use Omnireach\Matomo\MatomoFactory;
-use Omnireach\Model\{Dimension, Metric, ReachQuery};
-use Omnireach\Registry;
-use Omnireach\SearchConsole\SearchConsoleFactory;
+use Omnipulse\Matomo\MatomoFactory;
+use Omnipulse\Model\{Dimension, Metric, ReachQuery};
+use Omnipulse\Registry;
+use Omnipulse\SearchConsole\SearchConsoleFactory;
 use Symfony\Component\HttpClient\HttpClient;
 
 $http = HttpClient::create();
@@ -31,7 +34,7 @@ $history = $registry->audience('stats')->audience(new ReachQuery($from, $to, [Di
 
 ## The shape
 
-- **Models** (`Omnireach\Model`): `ReachQuery` (whole days, dimensions, metrics, exact filters,
+- **Models** (`Omnipulse\Model`): `ReachQuery` (whole days, dimensions, metrics, exact filters,
   a limit, the site when not the configured one; `lastDays()` ends yesterday), the enums
   `Dimension` (query, page, entry page, country, device, source, date) and `Metric` (clicks,
   impressions, CTR, position; visitors, visits, pageviews, bounce rate, visit duration), `Row`,
@@ -51,16 +54,16 @@ $history = $registry->audience('stats')->audience(new ReachQuery($from, $to, [Di
 
 | Package | Contract | Dimensions | Auth |
 |---|---|---|---|
-| [omnireach/search-console](https://github.com/glitchr-omnisense/omnireach-search-console) | search | query, page, country, device, date (combined) | service account or token |
-| [omnireach/bing-webmaster](https://github.com/glitchr-omnisense/omnireach-bing-webmaster) | search | query or page, date (Bing's weekly rows) | API key |
-| [omnireach/matomo](https://github.com/glitchr-omnisense/omnireach-matomo) | audience | entry page, page, source, country or device, date | token (or anonymous) |
-| [omnireach/plausible](https://github.com/glitchr-omnisense/omnireach-plausible) | audience | page, entry page, source, country, device, date (combined) | API key |
-| [omnireach/ga4](https://github.com/glitchr-omnisense/omnireach-ga4) | audience | page, landing page, source, country, device, date (combined) | service account or token |
+| [omnipulse/search-console](https://github.com/glitchr-omnisense/omnipulse-search-console) | search | query, page, country, device, date (combined) | service account or token |
+| [omnipulse/bing-webmaster](https://github.com/glitchr-omnisense/omnipulse-bing-webmaster) | search | query or page, date (Bing's weekly rows) | API key |
+| [omnipulse/matomo](https://github.com/glitchr-omnisense/omnipulse-matomo) | audience | entry page, page, source, country or device, date | token (or anonymous) |
+| [omnipulse/plausible](https://github.com/glitchr-omnisense/omnipulse-plausible) | audience | page, entry page, source, country, device, date (combined) | API key |
+| [omnipulse/ga4](https://github.com/glitchr-omnisense/omnipulse-ga4) | audience | page, landing page, source, country, device, date (combined) | service account or token |
 
 - **Hosts**: no bridge yet. omnibridge/symfony and omnibridge/laravel wire the family when the
   first site needs it.
 
-What it is not: the site's own visit counter (`Base\Service\Analytics` counts visits; omnireach
+What it is not: the site's own visit counter (`Base\Service\Analytics` counts visits; omnipulse
 does not duplicate it), a tracker (no script is added to a page), a rank checker scraping search
 results.
 
@@ -82,13 +85,13 @@ The manual, in `docs/`:
 
 ## Verified, and not
 
-- Verified (`docker compose run --rm omnireach test` in `docker/`, PHP 8.4, 2026-10-24): the
+- Verified (`docker compose run --rm omnipulse test` in `docker/`, PHP 8.4, 2026-10-24): the
   query (whole days, validation, filters then limit), capabilities refusing what a provider
   cannot report, reports and totals, the registry, `JsonApi`'s errors; in plain PHP, reports asked
-  through a Registry and a recorded JSON API loading nothing but omnireach and Symfony's HTTP
+  through a Registry and a recorded JSON API loading nothing but omnipulse and Symfony's HTTP
   client contracts (`BareTest`); PHPStan at the highest level, no error baselined, on the core and
   the five providers.
-- Verified live (`docker compose run --rm omnireach live`, 2026-10-24): Matomo's public demo
+- Verified live (`docker compose run --rm omnipulse live`, 2026-10-24): Matomo's public demo
   (demo.matomo.cloud, anonymous) - the whole site over a week and its entry pages day by day.
 - Not verified live: Search Console, Bing Webmaster, Plausible and Google Analytics (each needs an
   account and a key). Their tests answer in the shapes their references document; each
@@ -96,7 +99,7 @@ The manual, in `docs/`:
 
 ## Responsibility
 
-omnisense/omnireach and its omnireach/* providers are unofficial clients, affiliated with none of
+omnisense/omnipulse and its omnipulse/* providers are unofficial clients, affiliated with none of
 the services they reach. The MIT licence covers the code only and grants no right to any service
 or its data. Whoever runs them complies with each service's terms (named in each provider's README
 and in `Capabilities::$terms`) and obtains what they require.

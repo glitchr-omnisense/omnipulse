@@ -6,13 +6,13 @@ order: 10
 # Installation
 
 ```sh
-composer require omnisense/omnireach omnireach/matomo symfony/http-client   # one package per provider
+composer require omnisense/omnipulse omnipulse/matomo symfony/http-client   # one package per provider
 ```
 
 ## Requirements
 
 - PHP 8.2 or later.
-- `omnisense/omnireach` requires `symfony/http-client-contracts` (^3.0) and nothing else.
+- `omnisense/omnipulse` requires `symfony/http-client-contracts` (^3.0) and nothing else.
 - Every provider requires the core and `symfony/http-client-contracts` only: the HTTP client
   itself is the application's. Any implementation of
   `Symfony\Contracts\HttpClient\HttpClientInterface` does - `symfony/http-client` (a library that
@@ -20,10 +20,10 @@ composer require omnisense/omnireach omnireach/matomo symfony/http-client   # on
   test. A factory given no client refuses to build its provider (`InvalidConfigException`: `The
   "matomo" provider needs an HTTP client: give one to MatomoFactory.`); none makes a client of its
   own.
-- `omnireach/search-console` and `omnireach/ga4` require `ext-openssl`: they sign the JWT a Google
+- `omnipulse/search-console` and `omnipulse/ga4` require `ext-openssl`: they sign the JWT a Google
   service account's token is asked with.
 
-Omnireach runs the same in plain PHP, in a worker, in Laravel and in Symfony; there is no bundle
+Omnipulse runs the same in plain PHP, in a worker, in Laravel and in Symfony; there is no bundle
 or Laravel provider yet ([Symfony](symfony.md), [Laravel](laravel.md)).
 
 ## Plain PHP
@@ -36,13 +36,13 @@ given, as a provider would have returned them. It shows the pieces every provide
 
 require __DIR__.'/vendor/autoload.php';
 
-use Omnireach\Exception\NotSupportedException;
-use Omnireach\Model\Dimension;
-use Omnireach\Model\Metric;
-use Omnireach\Model\ReachQuery;
-use Omnireach\Model\Row;
-use Omnireach\Registry;
-use Omnireach\Testing\FixedReachFactory;
+use Omnipulse\Exception\NotSupportedException;
+use Omnipulse\Model\Dimension;
+use Omnipulse\Model\Metric;
+use Omnipulse\Model\ReachQuery;
+use Omnipulse\Model\Row;
+use Omnipulse\Registry;
+use Omnipulse\Testing\FixedReachFactory;
 
 // Rows a provider would have returned: search queries by day, visits by entry page and source.
 $search = [
@@ -80,7 +80,7 @@ $last = ReachQuery::lastDays(28, today: new DateTimeImmutable('2026-10-26'));
 echo "\nlastDays(28): ", $last->start->format('Y-m-d'), ' to ', $last->end->format('Y-m-d'), "\n";
 
 // What a provider's capabilities refuse, before any call.
-$registry2 = new Registry([new Omnireach\Matomo\MatomoFactory(new Omnireach\Testing\RecordedHttpClient(static fn () => [500, '']))], [
+$registry2 = new Registry([new Omnipulse\Matomo\MatomoFactory(new Omnipulse\Testing\RecordedHttpClient(static fn () => [500, '']))], [
     'stats' => ['factory' => 'matomo', 'options' => ['url' => 'https://stats.example.org', 'site' => '1']],
 ]);
 try {
@@ -106,11 +106,11 @@ totals: {"clicks":15,"impressions":750}
 
 lastDays(28): 2026-09-28 to 2026-10-25
 Matomo does not report the dimension "query".
-The "stats" provider (Omnireach\Matomo\MatomoProvider) does not report search performance.
+The "stats" provider (Omnipulse\Matomo\MatomoProvider) does not report search performance.
 ```
 
 (run on 2026-10-26 in the [harness](harness.md), PHP 8.4, with the harness's autoloader; the
-Matomo part needs `omnireach/matomo` installed)
+Matomo part needs `omnipulse/matomo` installed)
 
 The pieces:
 
@@ -132,11 +132,11 @@ The query asking Matomo for search queries was refused by its capabilities: no H
 Matomo publishes a demo whose reports anyone may read, so this one runs without an account:
 
 ```php
-use Omnireach\Matomo\MatomoFactory;
-use Omnireach\Model\Dimension;
-use Omnireach\Model\Metric;
-use Omnireach\Model\ReachQuery;
-use Omnireach\Registry;
+use Omnipulse\Matomo\MatomoFactory;
+use Omnipulse\Model\Dimension;
+use Omnipulse\Model\Metric;
+use Omnipulse\Model\ReachQuery;
+use Omnipulse\Registry;
 use Symfony\Component\HttpClient\HttpClient;
 
 $registry = new Registry([new MatomoFactory(HttpClient::create(['timeout' => 30]))], [

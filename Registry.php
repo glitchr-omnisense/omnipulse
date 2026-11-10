@@ -1,9 +1,9 @@
 <?php
 
-namespace Omnireach;
+namespace Omnipulse;
 
-use Omnireach\Exception\InvalidConfigException;
-use Omnireach\Exception\NotSupportedException;
+use Omnipulse\Exception\InvalidConfigException;
+use Omnipulse\Exception\NotSupportedException;
 
 /**
  * The application's audience providers by name, each built once from its

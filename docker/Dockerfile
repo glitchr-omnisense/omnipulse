@@ -1,4 +1,4 @@
-# PHP 8.4 with Composer: the harness installs this package and every omnireach/* provider at start.
+# PHP 8.4 with Composer: the harness installs this package and every omnipulse/* provider at start.
 FROM php:8.4-cli
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git unzip \
@@ -7,5 +7,5 @@ RUN apt-get update \
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_NO_INTERACTION=1 COMPOSER_CACHE_DIR=/harness/.cache
 WORKDIR /harness
-ENTRYPOINT ["/omnireach/core/docker/entrypoint.sh"]
+ENTRYPOINT ["/omnipulse/core/docker/entrypoint.sh"]
 CMD ["test"]

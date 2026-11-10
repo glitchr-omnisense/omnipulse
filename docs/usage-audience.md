@@ -7,15 +7,15 @@ order: 32
 
 `AudienceInterface::audience(ReachQuery $query): Report` reports who visits the site, as an
 analytics tool counted it: visitors, visits, pages viewed, bounce rate and visit length, by entry
-page, page, source, country, device or day. Three providers answer it: `omnireach/matomo`,
-`omnireach/plausible` and `omnireach/ga4`. Metrics by default: visitors, visits, pageviews.
+page, page, source, country, device or day. Three providers answer it: `omnipulse/matomo`,
+`omnipulse/plausible` and `omnipulse/ga4`. Metrics by default: visitors, visits, pageviews.
 
 ## Where visits start
 
 ```php
-use Omnireach\Model\Dimension;
-use Omnireach\Model\Metric;
-use Omnireach\Model\ReachQuery;
+use Omnipulse\Model\Dimension;
+use Omnipulse\Model\Metric;
+use Omnipulse\Model\ReachQuery;
 
 $report = $registry->audience('stats')->audience(
     ReachQuery::lastDays(28, [Dimension::EntryPage], [Metric::Visits, Metric::BounceRate, Metric::VisitDuration]),

@@ -1,26 +1,26 @@
 <?php
 
-namespace Omnireach\Tests;
+namespace Omnipulse\Tests;
 
-use Omnireach\Capabilities;
-use Omnireach\Config;
-use Omnireach\Exception\InvalidConfigException;
-use Omnireach\Exception\InvalidKeyException;
-use Omnireach\Exception\NotFoundException;
-use Omnireach\Exception\NotSupportedException;
-use Omnireach\Exception\ProviderException;
-use Omnireach\Http\JsonApi;
-use Omnireach\Model\Dimension;
-use Omnireach\Model\Metric;
-use Omnireach\Model\ReachQuery;
-use Omnireach\Model\Report;
-use Omnireach\Model\Row;
-use Omnireach\ProviderFactory;
-use Omnireach\ProviderInterface;
-use Omnireach\Registry;
-use Omnireach\SearchPerformanceInterface;
-use Omnireach\Testing\FixedReachFactory;
-use Omnireach\Testing\RecordedHttpClient;
+use Omnipulse\Capabilities;
+use Omnipulse\Config;
+use Omnipulse\Exception\InvalidConfigException;
+use Omnipulse\Exception\InvalidKeyException;
+use Omnipulse\Exception\NotFoundException;
+use Omnipulse\Exception\NotSupportedException;
+use Omnipulse\Exception\ProviderException;
+use Omnipulse\Http\JsonApi;
+use Omnipulse\Model\Dimension;
+use Omnipulse\Model\Metric;
+use Omnipulse\Model\ReachQuery;
+use Omnipulse\Model\Report;
+use Omnipulse\Model\Row;
+use Omnipulse\ProviderFactory;
+use Omnipulse\ProviderInterface;
+use Omnipulse\Registry;
+use Omnipulse\SearchPerformanceInterface;
+use Omnipulse\Testing\FixedReachFactory;
+use Omnipulse\Testing\RecordedHttpClient;
 use PHPUnit\Framework\TestCase;
 
 final class RegistryTest extends TestCase
@@ -63,7 +63,7 @@ final class RegistryTest extends TestCase
         self::assertSame([true, false, 12, null, 'fallback'], [$config->bool('a'), $config->bool('b'), $config->int('c'), $config->string('d'), $config->defaults(['d2' => 'fallback'])->get('d2')]);
     }
 
-    public function testJsonApiTurnsFailuresIntoOmnireachExceptions(): void
+    public function testJsonApiTurnsFailuresIntoOmnipulseExceptions(): void
     {
         $api = new JsonApi(RecordedHttpClient::routes([
             'GET /ok' => '{"rows":[{"clicks":1}]}',
@@ -95,7 +95,7 @@ final class RegistryTest extends TestCase
         try {
             (new JsonApi($http, 'Example'))->request('GET', 'https://user:pass@api.example/v1/stats', ['query' => ['site' => 'a.example', 'apikey' => 'sk-secret-123']], 'the statistics');
             self::fail('no exception');
-        } catch (\Omnireach\Exception\UnreachableException $e) {
+        } catch (\Omnipulse\Exception\UnreachableException $e) {
             self::assertSame('Example could not be reached for the statistics (GET /v1/stats): Could not resolve host: api.example.', $e->getMessage());
             self::assertStringNotContainsString('sk-secret-123', $e->getMessage());
             self::assertStringNotContainsString('pass', $e->getMessage());
@@ -118,7 +118,7 @@ final class RegistryTest extends TestCase
         try {
             (new JsonApi($http, 'Example'))->request('GET', 'https://user:url-password-123@api.example/v1/stats', ['query' => ['site' => 'a.example', 'apikey' => 'sk-secret-123'], 'auth_bearer' => 'bearer-secret-456'], 'the statistics');
             self::fail('no exception');
-        } catch (\Omnireach\Exception\UnreachableException $e) {
+        } catch (\Omnipulse\Exception\UnreachableException $e) {
             $previous = $e->getPrevious();
             self::assertInstanceOf(\Symfony\Component\HttpClient\Exception\TransportException::class, $previous);
             self::assertSame(6, $previous->getCode());
@@ -141,7 +141,7 @@ final class RegistryTest extends TestCase
         return new class extends ProviderFactory {
             protected function populate(Config $c): void
             {
-                $c->defaults(['omnireach.factory_name' => 'search', 'omnireach.factory_title' => 'Search', 'omnireach.required_options' => ['api_key']]);
+                $c->defaults(['omnipulse.factory_name' => 'search', 'omnipulse.factory_title' => 'Search', 'omnipulse.required_options' => ['api_key']]);
             }
 
             protected function build(Config $c): ProviderInterface
@@ -188,7 +188,7 @@ final class RegistryTest extends TestCase
                         continue;
                     }
                     self::fail("no exception on $status");
-                } catch (\Omnireach\Exception\OmnireachException $e) {
+                } catch (\Omnipulse\Exception\OmnipulseException $e) {
                     self::assertNotEmpty($e->getTrace());
                     foreach (['error-key-1234567', 'error-token-1234567'] as $secret) {
                         self::assertFalse(str_contains($e->getMessage(), $secret), $e->getMessage());

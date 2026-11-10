@@ -1,6 +1,6 @@
 <?php
 
-namespace Omnireach\Model;
+namespace Omnipulse\Model;
 
 /** What a report counts. */
 enum Metric: string
