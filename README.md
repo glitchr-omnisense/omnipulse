@@ -7,6 +7,40 @@ establishment; the funding platforms who funds the project. One registry, contra
 capability, one set of models per family whoever answers. Plain PHP: no framework in `require`,
 the application's HTTP client injected (Symfony's HTTP client contracts).
 
+## Install and a first call
+
+```sh
+composer require omnisense/omnipulse omnipulse/liberapay
+```
+
+No account for this first call: Liberapay's answer is recorded
+(`Omnipulse\Testing\RecordedHttpClient` answers in place of the API), so nothing leaves the process.
+Liberapay and Open Collective answer a public profile with no key at all (a real HTTP client,
+`symfony/http-client`, is all they need); the other providers need an account: an API key (Bing
+Webmaster, Plausible, Google Places, Tripadvisor, Trustpilot), a token (Matomo, GitHub), or a Google
+service account (GA4, Search Console).
+
+```php
+<?php
+
+require __DIR__.'/vendor/autoload.php';
+
+use Omnipulse\Liberapay\LiberapayFactory;
+use Omnipulse\Registry;
+use Omnipulse\Testing\RecordedHttpClient;
+
+// Liberapay's public profile, recorded: nothing sent. HttpClient::create() for a real call (no key needed).
+$http = RecordedHttpClient::routes([
+    'GET /Liberapay/public.json' => '{"username": "Liberapay", "kind": "group", "npatrons": 1782, "receiving": {"amount": "636.28", "currency": "EUR"}, "goal": {"amount": "1000.00", "currency": "EUR"}, "summaries": [{"content": "We are building the best recurrent donations platform in the world.", "lang": "en"}]}',
+]);
+$registry = new Registry([new LiberapayFactory($http)], ['funding' => ['factory' => 'liberapay', 'options' => ['account' => 'Liberapay']]]);
+
+$profile = $registry->profile('funding')->profile();
+echo $profile->name, ': ', $profile->sponsors, ' patrons, ', $profile->income?->monthly()?->decimal(), ' ', $profile->income?->monthly()?->currency, " a month\n";   // Liberapay: 1782 patrons, 2757.21 EUR a month
+```
+
+With real providers, several families at once:
+
 ```php
 use Omnipulse\GoogleReviews\GoogleReviewsFactory;
 use Omnipulse\Liberapay\LiberapayFactory;
